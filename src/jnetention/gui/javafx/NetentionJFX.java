@@ -5,6 +5,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.embed.swing.SwingNode;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -18,6 +19,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import javax.swing.SwingUtilities;
 import jnetention.Core;
 import jnetention.gui.swing.SwingMap;
@@ -38,14 +40,17 @@ public class NetentionJFX extends Application {
     public void start(Stage primaryStage) {
         
         core = new Core();
+        /*
         try {
             core.online(10001);            
         } catch (IOException ex) {
             Logger.getLogger(NetentionJFX.class.getName()).log(Level.SEVERE, null, ex);
         }
+        */
         
         
         TabPane tab = new TabPane();
+        tab.getTabs().add(newWikiTab());
         tab.getTabs().add(newOptionsTab());        
         tab.getTabs().add(newSpacetimeTab());
         tab.getTabs().add(newSpaceTab());
@@ -64,6 +69,12 @@ public class NetentionJFX extends Application {
         primaryStage.setTitle("Netention (JavaFX GUI)");
         primaryStage.setScene(scene);
         primaryStage.show();
+        primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent event) {
+                System.exit(0);
+            }
+        });
     }
 
     /**
@@ -72,6 +83,15 @@ public class NetentionJFX extends Application {
     public static void main(String[] args) {
         launch(args);
     }
+    
+    
+    public Tab newWikiTab() {
+        Tab t = new Tab("Wiki");
+        
+        t.setContent(new WikiTagger("Cyberwarfare"));
+        
+        return t;
+    }    
     
     public Tab newSpaceTab() {
         Tab t = new Tab("Space");
