@@ -6,18 +6,20 @@
 
 package jnetention;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.primitives.Longs;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import org.apache.commons.math3.random.RandomGenerator;
 
 /**
  *
@@ -35,7 +37,7 @@ public class NObject extends Value implements Serializable, Comparable {
     }
     
     public NObject(String name) {
-        this(name, UUID.randomUUID().toString());
+        this(name, UUID());
     }
     
     public NObject(String name, String id) {
@@ -137,6 +139,13 @@ public class NObject extends Value implements Serializable, Comparable {
     }
     
     
-    
+    public static String UUID() {
+        
+        long a = (long)(Math.random() * Long.MAX_VALUE);
+        long b = (long)(Math.random() * Long.MAX_VALUE);
+        
+        return Base64.getEncoder().encodeToString( Longs.toByteArray(a) ).substring(0, 11) 
+                + Base64.getEncoder().encodeToString( Longs.toByteArray(b) ).substring(0, 11);
+    }
     
 }

@@ -25,6 +25,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import jnetention.Core;
+import jnetention.NObject;
 import jnetention.SpacePoint;
 import jnetention.NTag;
 import nars.io.TextInput;
@@ -315,13 +316,14 @@ public class WikiTagger extends BorderPane {
  
 
         final String _tag = tag;
-        setBottom(new OperatorTaggingPane(tag, this) {
+        setBottom(new OperatorTagPane(core, tag, this) {
+            
             @Override
-            public void onFinished(boolean save, String subject, Collection<String> tags) {
+            public void onFinished(boolean save, NObject subject, Collection<String> tags) {
                 if (save && tags!=null) {
                 
                     if (subject == null)
-                        subject = core.getMyself().id;
+                        subject = core.getMyself();
                     
                     addTag(subject, _tag, tags);
                 }                    
@@ -379,12 +381,12 @@ public class WikiTagger extends BorderPane {
         return p;
     }
     
-    protected void addTag(String subject, String pageTag, Collection<String> tags) {
+    protected void addTag(NObject subject, String pageTag, Collection<String> tags) {
         
         //TODO create Nobject
         
         for (String t : tags) {
-            core.knowProduct(subject, pageTag, t, 1.0, 0.95, 0.9);
+            core.knowProduct(subject.id, pageTag, t, 1.0, 0.95, 0.9);
         }
     }
 

@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import nars.core.NAR;
-import nars.core.Parameters;
 import nars.io.TextInput;
 import nars.io.TextOutput;
 import net.tomp2p.connection.Bindings;
@@ -116,7 +115,7 @@ public class Core {
 
             @Override
             public boolean apply(NObject t) {
-                return t.getTags().contains(Tag.User.toString());
+                return t.hasTag(Tag.User);
             }            
         });
     }
@@ -148,6 +147,7 @@ public class Core {
     }
     
     public void become(NObject user) {
+        System.out.println("Become: " + user);
         myself = user;
     }
     

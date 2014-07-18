@@ -32,8 +32,8 @@ public class SpacetimeTagPlan {
     protected double spaceWeight = 1.0; //meters
     protected double altWeight = 1.0; //meters
     protected double tagWeight = 1.0;  //weight per each individual tag
-    
-    protected double minPossibilityTagStrength = 0.1; //minimum strength that a resulting tag must be to be added to a generated Possibility
+    protected int maxIterations = 10000;    
+    protected double minPossibilityTagStrength = 0.02; //minimum strength that a resulting tag must be to be added to a generated Possibility
 
     
     //internal
@@ -220,12 +220,6 @@ public class SpacetimeTagPlan {
             this.mapping = t;            
         }
         
-        public NObject newNObject() {
-            NObject n = new NObject();
-            //TODO iterate through dimensions, add tags according to mapping
-            return n;
-        }
-        
         
     }
     
@@ -274,23 +268,23 @@ public class SpacetimeTagPlan {
             mapping.addAll(uniqueTags);
         }
         
+            
+    }
+    
+    public List<Possibility> compute(int numCentroids, double fuzziness) {
+        goals.clear();
+        mapping.reset();
+        
         //2. compute goal vectors 
-        for (NObject o : n) {
+        for (NObject o : objects) {
             goals.addAll(mapping.newGoals(o));
         }
         
         //3. normalize
         mapping.normalize(goals);
+
         
-            
-    }
-    
-    public List<Possibility> compute(int numCentroids, double fuzziness) {
-        //4. weight
-        
-        
-        //5. cluster
-        int maxIterations = 10000;
+        //4. distance function
         DistanceMeasure distanceMetric = new DistanceMeasure() {
 
             @Override
@@ -328,15 +322,15 @@ public class SpacetimeTagPlan {
             
         };
         
-        
+        //5. cluster
         FuzzyKMeansClusterer<Goal> clusterer = new FuzzyKMeansClusterer<Goal>(numCentroids, fuzziness, maxIterations, distanceMetric);
         List<CentroidCluster<Goal>> centroids = clusterer.cluster(goals); 
         
+        //6. denormalize and return annotated objects
         for (Goal g : goals) {
             mapping.denormalize(g);
         }
         
-        //6. denormalize and return annotated objects
         return getPossibilities(centroids);
     }
     
@@ -408,7 +402,17 @@ public class SpacetimeTagPlan {
         
         return l;
     }
+
+    public void setTimeWeight(double timeWeight) {        this.timeWeight = timeWeight;    }
+    public void setSpaceWeight(double spaceWeight) {        this.spaceWeight = spaceWeight;    }
+    public void setTagWeight(double tagWeight) {       this.tagWeight = tagWeight;    }
+    public void setAltWeight(double altWeight) {        this.altWeight = altWeight;    }
+    public double getAltWeight() {  return altWeight;   }
+    public double getSpaceWeight() { return spaceWeight;   }
+    public double getTagWeight() {  return tagWeight;    }
+    public double getTimeWeight() { return timeWeight;    }
      
+    
     
     
 }
