@@ -68,7 +68,6 @@ public class Core {
     }
     
     public Core(DB db) {
-        Parameters.CONCEPT_BAG_SIZE = 10000;
         logic = new NAR();
         new TextOutput(logic, System.out);
         

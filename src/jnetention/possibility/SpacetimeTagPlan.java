@@ -1,6 +1,5 @@
 package jnetention.possibility;
 
-import info.monitorenter.util.StringUtil;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -42,6 +41,7 @@ public class SpacetimeTagPlan {
     private final boolean space;
     private final boolean spaceAltitude;
     private final boolean tags;
+    public final List<NObject> objects;
     
     public static class TagVectorMapping extends ArrayList<String> {
         public final long timePeriod;
@@ -242,6 +242,8 @@ public class SpacetimeTagPlan {
      * @param spaceAltitude whether to involve space altitude
      */
     public SpacetimeTagPlan(List<NObject> n, boolean tags, long timePeriod, boolean space, boolean spaceAltitude) {
+        
+        this.objects = n;
         
         //1. compute mapping
         this.mapping = new TagVectorMapping(timePeriod);
