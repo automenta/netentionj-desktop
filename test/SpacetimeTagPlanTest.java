@@ -1,10 +1,12 @@
 
+import info.monitorenter.util.StringUtil;
 import java.util.LinkedList;
 import java.util.List;
 import jnetention.NObject;
 import jnetention.SpacePoint;
 import jnetention.TimeRange;
 import jnetention.possibility.SpacetimeTagPlan;
+import jnetention.possibility.SpacetimeTagPlan.Possibility;
 import org.junit.Test;
 
 /*
@@ -23,7 +25,7 @@ public class SpacetimeTagPlanTest {
     public void testPlanNObjects() {
         int numObjects = 10;
         int numTags = numObjects/2;
-        int numCentroids = numObjects/2;
+        int numCentroids = numObjects/3;
         double fuzziness = 1.5;
         
         
@@ -50,15 +52,26 @@ public class SpacetimeTagPlanTest {
         
         
         SpacetimeTagPlan s = new SpacetimeTagPlan(n, true, 10*60*1000, true, false);
-        //System.out.println(s.mapping);
+        System.out.println(s.mapping);
         System.out.println(s.goals);
         
         assert(s.mapping.size() > 3);
         assert(s.mapping.size() <= (3+numTags));
         assert(s.goals.size() >= numObjects);
         
-        List<SpacetimeTagPlan.Goal> result = s.compute(numCentroids, fuzziness);
-        assert(result.size() == numCentroids);
+        List<Possibility> possibilities = s.compute(numCentroids, fuzziness);
+        assert(possibilities.size() == numCentroids);
+        
+        for (Possibility p : possibilities) {
+            System.out.println(p);
+            
+            assert(p.value.size() >= 2);
+            
+            //System.out.println("Center: " + StringUtil.arrayToString(p.getCenter()));
+            //System.out.println("  Points (" + c.getPoints().size() + "): " + c.getPoints());
+            
+            
+        }
         
         
         

@@ -1,5 +1,6 @@
 package jnetention.possibility;
 
+import info.monitorenter.util.StringUtil;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -11,10 +12,10 @@ import jnetention.NObject;
 import jnetention.SpacePoint;
 import jnetention.TimePoint;
 import jnetention.TimeRange;
+import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.DoublePoint;
 import org.apache.commons.math3.ml.clustering.FuzzyKMeansClusterer;
 import org.apache.commons.math3.ml.distance.DistanceMeasure;
-import org.apache.commons.math3.ml.distance.EuclideanDistance;
 
 /**
  *
@@ -27,17 +28,26 @@ public class SpacetimeTagPlan {
     public final TagVectorMapping mapping;
     public final List<Goal> goals = new ArrayList();
     
+    //Parameters, can be changed between computations
+    protected double timeWeight = 1.0;  //normalized to seconds
+    protected double spaceWeight = 1.0; //meters
+    protected double altWeight = 1.0; //meters
+    protected double tagWeight = 1.0;  //weight per each individual tag
     
-    private final double timeWeight = 1.0;  //normalized to seconds
-    private final double spaceWeight = 1.0; //meters
-    private final double altWeight = 1.0; //meters
-    private final double tagWeight = 1.0; 
+    protected double minPossibilityTagStrength = 0.1; //minimum strength that a resulting tag must be to be added to a generated Possibility
+
     
+    //internal
+    private final boolean time;
+    private final boolean space;
+    private final boolean spaceAltitude;
+    private final boolean tags;
     
     public static class TagVectorMapping extends ArrayList<String> {
         public final long timePeriod;
         private static final TimePoint NullTimePoint = new TimePoint(-1);
         double[] min, max;
+        private int tagIndex = -1; //index where tags begin in the mapping; they continue until the end
         
         /**
          * 
@@ -90,6 +100,8 @@ public class SpacetimeTagPlan {
                 times.add(NullTimePoint);
             }
             
+            tagIndex = -1;
+            
             for (TimePoint currentTime : times) {
                 
                 double[] d = new double[this.size()];
@@ -114,6 +126,9 @@ public class SpacetimeTagPlan {
                         d[i] = sp.alt;
                     }
                     else {
+                        if (tagIndex == -1) {
+                            tagIndex = i;
+                        }
                         Double strength = ts.get(s);
                         if (strength!=null) {
                             d[i] = strength;
@@ -132,7 +147,7 @@ public class SpacetimeTagPlan {
                     }
                 }
                     
-                goals.add(new Goal(this, d));
+                goals.add(new Goal(o, this, d));
             }
 
             return goals;
@@ -155,6 +170,39 @@ public class SpacetimeTagPlan {
                 }
             }
         }
+
+        public void denormalize(Goal g) {
+            denormalize(g.getPoint());
+        }
+        
+        public void denormalize(double[] d) {
+            for (int i = 0; i < d.length; i++) {
+                double MIN = min[i];
+                double MAX = max[i];
+                if (MIN!=MAX) {
+                    d[i] = d[i] * (MAX-MIN) + MIN;
+                }
+                else {
+                    d[i] = MIN;
+                }
+            }            
+
+            //normalize tags against each other
+            if (tagIndex >= d.length) return;
+            
+            double min, max;
+            min = max = d[tagIndex];
+            for (int i = tagIndex+1; i < d.length; i++) {
+                if (d[i] > max) max = d[i];
+                if (d[i] < min) min = d[i];
+            }
+            if (min!=max) {
+                for (int i = tagIndex; i < d.length; i++) {
+                    d[i] = (d[i] - min)/(max-min);
+                }
+            }
+            
+        }
         
         
     }
@@ -162,9 +210,13 @@ public class SpacetimeTagPlan {
     /** a point in goal-space; the t parameter is included for referencing what the dimensions mean */
     public static class Goal extends DoublePoint {
         private final TagVectorMapping mapping;
+        
+        /** the implicated object */
+        private final NObject object;
 
-        public Goal(TagVectorMapping t, double[] v) {
+        public Goal(NObject o, TagVectorMapping t, double[] v) {
             super(v);
+            this.object = o;
             this.mapping = t;            
         }
         
@@ -194,9 +246,13 @@ public class SpacetimeTagPlan {
         //1. compute mapping
         this.mapping = new TagVectorMapping(timePeriod);
         
-        boolean time = timePeriod > 0;
+        this.time = timePeriod > 0;
+        this.space = space;
+        this.spaceAltitude = spaceAltitude;
+        this.tags = tags;
         
-        if (time)
+                
+        if (this.time)
             mapping.add("time");
         if (space) {
             mapping.add("lat");
@@ -227,28 +283,130 @@ public class SpacetimeTagPlan {
             
     }
     
-    public List<Goal> compute(int centroids, double fuzziness) {
+    public List<Possibility> compute(int numCentroids, double fuzziness) {
         //4. weight
         
         
         //5. cluster
         int maxIterations = 10000;
-        DistanceMeasure distanceMetric = new EuclideanDistance();
+        DistanceMeasure distanceMetric = new DistanceMeasure() {
+
+            @Override
+            public double compute(double[] a, double[] b) {
+                double dist = 0;
+                int i = 0;
+                
+                if (time) {
+                    dist += Math.abs(a[i] - b[i]) * timeWeight;
+                    i++;
+                }
+                if (space) {
+                    //TODO use earth surface distance measurement on non-normalized space lat,lon coordinates
+                    
+                    double dx = Math.abs(a[i] - b[i]);
+                    i++;
+                    double dy = Math.abs(a[i] - b[i]);
+                    i++;
+                    
+                    double ed = Math.sqrt( dx*dx + dy*dy );
+                    dist += ed * spaceWeight;
+                }
+                if (spaceAltitude) {
+                    dist += Math.abs(a[i] - b[i]) * altWeight;
+                    i++;
+                }
+                if (tags) {
+                    for ( ;i < a.length; i++) {
+                        dist += Math.abs(a[i] - b[i]) * tagWeight;
+                    }
+                }
+                
+                return dist;
+            }
+            
+        };
         
         
-        FuzzyKMeansClusterer<Goal> clusterer = new FuzzyKMeansClusterer<Goal>(centroids, fuzziness, maxIterations, distanceMetric);
+        FuzzyKMeansClusterer<Goal> clusterer = new FuzzyKMeansClusterer<Goal>(numCentroids, fuzziness, maxIterations, distanceMetric);
+        List<CentroidCluster<Goal>> centroids = clusterer.cluster(goals); 
         
+        for (Goal g : goals) {
+            mapping.denormalize(g);
+        }
         
-        //6. transform centroids into possiblities
-        
-        return null;
+        //6. denormalize and return annotated objects
+        return getPossibilities(centroids);
     }
     
     public TagVectorMapping getMapping() {
         return mapping;
     }
     
- 
+    public class Possibility extends NObject {
+        private final double[] center;
+
+        public Possibility(double[] center) {
+            this.center = center;
+        }
+        
+        public double[] getCenter() {
+            return center;
+        }
+        
+        
+    }
+    
+    protected List<Possibility> getPossibilities(List<CentroidCluster<Goal>> centroids) {
+        List<Possibility> l = new ArrayList(centroids.size());
+        
+        for (CentroidCluster<Goal> c : centroids) {
+            double[] point = c.getCenter().getPoint();
+            mapping.denormalize(point);
+            
+            Possibility p = new Possibility(point);
+            int i = 0;
+            if (time) {
+                long when = (long)point[i++];
+
+                //TODO use timerange based on discretizing period duration?
+                p.add("when", new TimePoint((long)when));
+            }
+            SpacePoint s = null;
+            if (space) {
+                double lat = point[i++];
+                double lon = point[i++];
+                s = new SpacePoint(lat, lon);                    
+                p.add("where", s);
+            }
+
+
+            if (spaceAltitude) {
+                double alt = point[i++];                    
+                if (s == null) {
+                    s = new SpacePoint(0,0,alt);
+                    p.add("where", s);
+                }
+                else
+                    s.alt = alt;
+            }
+
+
+            if (tags) {
+                for ( ;i < point.length; i++) {
+                    double strength = point[i];
+                    if (strength > minPossibilityTagStrength) {
+                        String tag = mapping.get(i);
+                        p.add(tag, strength);
+                    }
+                }
+            }                            
+            
+            l.add(p);
+        }
+        
+        return l;
+    }
+     
     
     
 }

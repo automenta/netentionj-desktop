@@ -1,5 +1,7 @@
 package jnetention;
 
+import java.util.Date;
+
 /**
  *
  * @author me
@@ -16,5 +18,7 @@ public class TimePoint {
         return n.firstValue(TimePoint.class);
     }
 
-    
+    public String toString() {
+        return new Date(at).toString();
+    }
 }

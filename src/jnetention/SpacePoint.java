@@ -8,7 +8,6 @@ package jnetention;
 
 import ch.hsr.geohash.GeoHash;
 import java.io.Serializable;
-import java.util.List;
 
 /**
  *
@@ -21,8 +20,13 @@ public class SpacePoint implements Serializable {
     public double alt; //in meters
 
     public SpacePoint(double lat, double lon) {
+        this(lat, lon, Double.NaN);
+    }
+
+    public SpacePoint(double lat, double lon, double alt) {        
         this.lat = lat;
         this.lon = lon;
+        this.alt = alt;
     }
     
     public GeoHash getGeoHash(int bits) {
@@ -37,4 +41,13 @@ public class SpacePoint implements Serializable {
     public static SpacePoint get(NObject n) {
         return n.firstValue(SpacePoint.class);
     }
+    
+    public String toString() {
+        String s = String.format("%.2f", lat) + "," + String.format("%.2f", lon);
+        
+        if (!Double.isNaN(alt)) {
+            s += "," + alt;            
+        }
+        return s;
+    }    
 }
