@@ -9,7 +9,7 @@ import org.junit.Test;
  *
  * @author me
  */
-public class TestPeer {
+public class PeerTest {
     
     @Test
     public void testDB() {

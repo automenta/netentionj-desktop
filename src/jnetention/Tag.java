@@ -8,9 +8,14 @@ package jnetention;
 
 /**
  *
- * @author me
+ * default/system tags
  */
 public enum Tag {
+    tag, property,
+    
+    
     Human, User
+    
+    
     
 }

@@ -1,8 +1,5 @@
 package jnetention.gui.javafx;
 
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.embed.swing.SwingNode;
 import javafx.event.EventHandler;
@@ -50,8 +47,8 @@ public class NetentionJFX extends Application {
         
         
         TabPane tab = new TabPane();
+        tab.getTabs().add(newOptionsTab());                
         tab.getTabs().add(newWikiTab());
-        tab.getTabs().add(newOptionsTab());        
         tab.getTabs().add(newSpacetimeTab());
         tab.getTabs().add(newSpaceTab());
         tab.getTabs().add(newTimeTab());
@@ -88,7 +85,7 @@ public class NetentionJFX extends Application {
     public Tab newWikiTab() {
         Tab t = new Tab("Wiki");
         
-        t.setContent(new WikiTagger("Cyberwarfare"));
+        t.setContent(new WikiTagger(core, "ICBM"));
         
         return t;
     }    

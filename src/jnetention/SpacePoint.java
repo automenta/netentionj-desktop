@@ -1,0 +1,40 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+package jnetention;
+
+import ch.hsr.geohash.GeoHash;
+import java.io.Serializable;
+import java.util.List;
+
+/**
+ *
+ * @author me
+ */
+public class SpacePoint implements Serializable {
+    //public String planet = "Earth";
+    public double lat;
+    public double lon;
+    public double alt; //in meters
+
+    public SpacePoint(double lat, double lon) {
+        this.lat = lat;
+        this.lon = lon;
+    }
+    
+    public GeoHash getGeoHash(int bits) {
+        /**
+	 * This method uses the given number of characters as the desired precision
+	 * value. The hash can only be 64bits long, thus a maximum precision of 12
+	 * characters can be achieved.
+	 */        
+        return GeoHash.withBitPrecision(lat,lon, bits);
+    }
+    
+    public static SpacePoint get(NObject n) {
+        return n.firstValue(SpacePoint.class);
+    }
+}

@@ -18,6 +18,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import nars.core.NAR;
+import nars.core.Parameters;
+import nars.io.TextInput;
+import nars.io.TextOutput;
 import net.tomp2p.connection.Bindings;
 import net.tomp2p.dht.FutureGet;
 import net.tomp2p.dht.FuturePut;
@@ -38,7 +41,7 @@ import org.mapdb.DBMaker;
 public class Core {
 
     //LOGIC
-    public final NAR logic = new NAR();
+    public final NAR logic;
     
     //DATABASE
     public final BTreeMap<String, NObject> data;
@@ -65,9 +68,12 @@ public class Core {
     }
     
     public Core(DB db) {
+        Parameters.CONCEPT_BAG_SIZE = 10000;
+        logic = new NAR();
+        new TextOutput(logic, System.out);
+        
         
         this.db = db;
-
         // open existing an collection (or create new)
         data = db.getTreeMap("objects");
         
@@ -121,6 +127,7 @@ public class Core {
         n.author = n.id;
         n.add(Tag.User);
         n.add(Tag.Human);
+        n.add("@", new SpacePoint(40, -80));
         save(n);
         return n;
     }
@@ -147,7 +154,9 @@ public class Core {
     
     /** save nobject to database */
     public void save(NObject x) {
-        data.put(x.id, x);
+        NObject removed = data.put(x.id, x);
+        
+        index(removed, x);
     }
     
     public void remove(String nobjectID) {
@@ -177,6 +186,8 @@ public class Core {
     }
    
    protected boolean netPut(String id, Object o) throws IOException  {
+       if (dht == null) return false;
+       
         FuturePut p = dht.put(Number160.createHash(id)).object(o).start();
         p.awaitUninterruptibly();
         if (p.isSuccess()) {
@@ -185,6 +196,8 @@ public class Core {
         return false;
     }   
    protected boolean netPut(String id, Object key, Object value) throws IOException  {
+        if (dht == null) return false;
+       
         FuturePut p = dht.put(Number160.createHash(id)).data(Number160.createHash(key.toString()), new Data(value)).start();
         p.awaitUninterruptibly();
         if (p.isSuccess()) {
@@ -222,27 +235,93 @@ public class Core {
     }
 
     /** save to database and publish in DHT */
-    public void publish(NObject x) throws IOException {
+    public void publish(NObject x) {
         save(x);
         
-        netPut(x.id, x);
-        
-        //add to tag index
-        for (String t : x.getTags()) {
-            netPut(t + ".index", getNetID()+x.id, x.id);
+        if (net!=null) {
+            try {
+                netPut(x.id, x);
+
+                //add to tag index        
+                for (String t : x.getTags()) {
+                    netPut(t + ".index", getNetID()+x.id, x.id);
+                }
+            }
+            catch (IOException e) {
+                System.err.println("publish: " + e);
+            }
         }
         
         //TODO save to geo-index
     }
     
     public int getNetID() {
+        if (net == null)
+            return -1;
         return net.p2pId();
     }
 
     public NObject getMyself() {
         return myself;
     }
+
+    protected void index(NObject previous, NObject next) {
+        if (previous!=null) {
+            if (previous.isClass()) {
+                
+            }
+        }
+        
+        if (next!=null) {
+            if (next.isClass()) {
+                String clas = next.id;
+                for (Map.Entry<String, Object> e : next.value.entries()) {
+                    if (!(e.getValue() instanceof Double))
+                        continue;
+                        
+                    String superclass = e.getKey();
+                    
+                    Double strength = (Double)e.getValue();
+                    double freq = (0.5 + strength/2.0) * (1.0);
+                    double conf = 0.95;
+                    
+                    String s = "<" + n(clas) + " --> " + n(superclass) + ">. %" + freq + ";" + conf + "%";
+                    
+                    new TextInput(logic, s);
+                    think();
+                    
+                }
+                
+            }
+        }
+        
+    }
+
+    public void knowSimilar(String a, String b, double freq, double conf) {
+        String s = "<" + n(a) + " <-> " + n(b) + ">. %" + freq + ";" + conf + "%";
+        new TextInput(logic, s);
+        think();
+    }
+    public void knowProduct(String a, String b, String clas, double freq, double conf, double priority) {
+        String s = "$" + priority + "$ <(*," + n(a) + "," + n(b) + ") --> " + clas + ">. %" + freq + ";" + conf + "%";
+        new TextInput(logic, s);
+        think();        
+    }
     
-    
+    public void think() {
+        logic.tick();
+    }
+
+    public static String n(String s) {
+        if (s.indexOf('%')==-1) return s;
+        return s.replaceAll("%", "__P");        
+    }
+
+    public Object getTag(String tagID) {
+        NObject tag = data.get(tagID);
+        if (tag!=null && tag.isClass())
+            return tag;
+        return null;
+    }
     
 }

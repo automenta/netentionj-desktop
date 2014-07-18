@@ -1,16 +1,15 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package jnetention.gui.javafx;
 
+import com.google.common.collect.HashMultiset;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.beans.value.ChangeListener;
@@ -22,9 +21,14 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
+import jnetention.Core;
+import jnetention.SpacePoint;
+import jnetention.NTag;
+import nars.io.TextInput;
+import netscape.javascript.JSObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -41,10 +45,15 @@ public class WikiTagger extends BorderPane {
     public final int TIMEOUT_MS = 15 * 1000;
     private final WebView webview;
     private final WebEngine webEngine;
+    private final Core core;
+    private final WikiOntology wikiOntology;
 
-    public WikiTagger(String startURL) {
+    public WikiTagger(Core c, String startURL) {
         super();
-
+        
+        this.core = c;
+        this.wikiOntology = new WikiOntology();
+        
         webview = new WebView();
         webEngine = webview.getEngine();
         webEngine.getLoadWorker().stateProperty().addListener(new ChangeListener<State>() {
@@ -69,7 +78,16 @@ public class WikiTagger extends BorderPane {
 
         setTop(newControls());
 
-        loadWikiPage(startURL);
+        visibleProperty().addListener(new ChangeListener<Boolean>() {
+            boolean firstvisible = true;
+            @Override
+            public void changed(final ObservableValue<? extends Boolean> observableValue, final Boolean aBoolean, final Boolean aBoolean2) {
+                if (isVisible() && firstvisible) {
+                    loadWikiPage(startURL);                    
+                    firstvisible = false;
+                }
+            }
+        });
 
     }
 
@@ -89,6 +107,13 @@ public class WikiTagger extends BorderPane {
     }
 
     protected void processPage() {
+        boolean wikiFilter = false;
+        
+        String location = webEngine.getLocation();
+        if (location.contains("://en.m.wikipedia.org") && !location.contains("api.php")) {
+            wikiFilter = true;
+        }
+        
         //JSObject win =  (JSObject) webEngine.executeScript("window");
         //win.setMember("app", new JavaApp());
 
@@ -99,17 +124,25 @@ public class WikiTagger extends BorderPane {
          webEngine.executeScript("var MINI = require('minified'); var _=MINI._, $=MINI.$, $$=MINI.$$, EE=MINI.EE, HTML=MINI.HTML;");
          */
         //String script = "$(function() {";
-        String script = "";
-        script += "$('body').after('<style>.crb { border: 1px solid #aaa; margin: 2px; padding: 1px; }</style>');";
-        script += "$('head, .header, #page-actions, #jump-to-nav, .top-bar, .navigation-drawer, .edit-page').remove();";
         
-        //Add tag button to each link
-        script += "$('a').each(function() { var t = $(this); var h = t.attr('href'); if (h && h.indexOf('#')!==-1) return; t.addClass('crb'); t.after('<a class=\"crb\" href=\"tag:/' + h + '\">+</a>')});";
-        
-        //Add Tag button to H1 header of article
-        script += "$('#section_0').each(function() { var t = $(this); t.append('<a class=\"crb\" href=\"tag://_\">+</a>')});";
-        
-        webEngine.executeScript(script);
+        if (wikiFilter) {
+            JSObject jsobj = (JSObject) webEngine.executeScript("window");
+            jsobj.setMember("category", wikiOntology);
+
+            String script = "";
+            script += "$('body').after('<style>.crb { border: 1px solid #aaa; margin: 2px; padding: 1px; }</style>');";
+            script += "$('head, .header, #page-actions, #jump-to-nav, .top-bar, .navigation-drawer, .edit-page').remove();";
+
+            //Add tag button to each link
+            script += "$('a').each(function() { var t = $(this); var h = t.attr('href'); if (h && h.indexOf('#')!==-1) return; t.addClass('crb'); t.after('<a class=\"crb\" href=\"tag:/' + h + '\">+</a>')});";
+
+            //Add Tag button to H1 header of article
+            script += "$('#section_0').each(function() { var t = $(this); t.append('<a class=\"crb\" href=\"tag://_\">+</a>')});";
+
+            script += "if (window.mw) { category.add(window.mw.config.get('wgCategories')); }";
+            
+            webEngine.executeScript(script);
+        }
 
         //webEngine.setJavaScriptEnabled(false);
         //if ((target.indexOf('Portal:') != 0) && (target.indexOf('Special:') != 0)) {
@@ -121,20 +154,49 @@ public class WikiTagger extends BorderPane {
                 //System.err.println("EventType: " + domEventType);
                 if (domEventType.equals("click")) {
                     String href = ((Element) ev.getTarget()).getAttribute("href");
-                                                 
-                    if (href.startsWith("tag://")) {
-                        tag(href);
-                    }
+ 
+                    if (href!=null)
+                        if (href.startsWith("tag://")) {
+                            tag(href);
+                        }
                 }
             }
         };
+        
+        String currentTag = getCurrentPageTag();
+        if (currentTag != null) {
 
-        Document doc = webEngine.getDocument();
-        NodeList nodeList = doc.getElementsByTagName("a");
-        for (int i = 0; i < nodeList.getLength(); i++) {
-            ((EventTarget) nodeList.item(i)).addEventListener("click", listener, false);
+            HashMultiset<String> links = HashMultiset.create();
 
+            Document doc = webEngine.getDocument();
+            NodeList nodeList = doc.getElementsByTagName("a");
+            for (int i = 0; i < nodeList.getLength(); i++) {
+                org.w3c.dom.Node item = nodeList.item(i);
+                ((EventTarget)item).addEventListener("click", listener, false);
+
+                if (item instanceof Element) {
+                    Element e = (Element)item;
+                    String href = e.getAttribute("href");
+                    if ((href!=null) && (href.startsWith("tag://wiki/"))) {
+                        String wikipage = href.substring("tag://wiki/".length());                    
+
+                        if (wikipage.equals(currentTag))
+                            continue;
+                        
+                        if (core.getTag(wikipage)!=null)
+                            links.add(wikipage);
+                    }
+                }
+            }
+            for (String p : links.elementSet()) {
+                double total = links.size();
+                double count = links.count(p);
+                double prop = count/total;
+
+                core.knowProduct(currentTag, p, "Wikilink", 1.0, prop, 0.4);
+            }
         }
+        
 
     }
 
@@ -211,6 +273,185 @@ public class WikiTagger extends BorderPane {
         if (urlOrTag.indexOf("/")==-1)
             urlOrTag = "http://en.m.wikipedia.org/wiki/" + urlOrTag;
         webEngine.load(urlOrTag);
+    }
+    
+    public String getWikiTag(String url) {
+        if (url.contains(".wikipedia.org/wiki/")) {
+            int p = url.lastIndexOf('/');
+            String tag = url.substring(p+1);                    
+         
+            int hashLocation = tag.indexOf('#');
+            if (hashLocation!=-1) {
+                tag = tag.substring(0, hashLocation);
+            }
+            return tag;
+        }
+        return null;
+    }
+    
+    public String getCurrentPageTag() {
+        return getWikiTag(webEngine.getLocation());
+    }
+    
+    public void tag(String url) {
+        String prefix = "tag://";
+        if (!url.startsWith(prefix)) {
+            return;
+        }
+        url = url.substring(prefix.length());
+
+        String wikiPrefix = "wiki/";
+        String tag;
+        if (url.startsWith(wikiPrefix)) {
+            tag = url.substring(wikiPrefix.length());
+        }
+        else if (url.startsWith("_")) {
+            tag = getCurrentPageTag();
+        }
+        else {
+            return;
+        }
+        
+ 
+
+        final String _tag = tag;
+        setBottom(new OperatorTaggingPane(tag, this) {
+            @Override
+            public void onFinished(boolean save, String subject, Collection<String> tags) {
+                if (save && tags!=null) {
+                
+                    if (subject == null)
+                        subject = core.getMyself().id;
+                    
+                    addTag(subject, _tag, tags);
+                }                    
+                    
+                WikiTagger.this.setBottom(null);
+            }
+         
+        });
+
+    }
+
+    protected Node newControls() {
+        Button nearButton = new Button("Near");
+        Button backButton = new Button("Back");
+        Button searchButton = new Button("Search");
+        TextField searchField = new TextField("");
+
+        BorderPane p = new BorderPane();
+        p.setCenter(searchField);
+        p.setRight(searchButton);
+        p.setLeft(new HBox(nearButton, backButton));
+
+        nearButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                SpacePoint location = SpacePoint.get(core.getMyself());
+                if (location == null)
+                    return;
+                
+                double lat = location.lat;
+                double lon = location.lon;
+                
+                double rad = 10000; //meters
+                int num = 10;
+                
+                String geoURL = "http://en.m.wikipedia.org/w/api.php?action=query&list=geosearch&format=json&gscoord=" + lat + "%7C" + lon + "&gsradius=" + rad + "&gslimit=" + num;                                                
+                loadWikiPage(geoURL);
+                
+                //Alternate method but requires html5 browser geolocation api:
+                //"https://en.m.wikipedia.org/wiki/Special:Nearby"
+            }
+        });
+        
+        EventHandler<ActionEvent> search = new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                loadWikiSearchPage(searchField.getText());
+                searchField.setText("");
+            }
+        };
+
+        searchButton.setOnAction(search);
+        searchField.setOnAction(search);
+
+        return p;
+    }
+    
+    protected void addTag(String subject, String pageTag, Collection<String> tags) {
+        
+        //TODO create Nobject
+        
+        for (String t : tags) {
+            core.knowProduct(subject, pageTag, t, 1.0, 0.95, 0.9);
+        }
+    }
+
+    public class WikiOntology {
+
+        public WikiOntology() {            
+            new TextInput(core.logic, "<<(*,$1,$2) --> WikiLink> ==> <$1 <-> $2>>. %0.25;0.80%");
+            core.think();            
+        }
+
+        
+        public void add(Object o) {
+            JSObject j = (JSObject)o;
+            List<String> categories = new ArrayList();
+            
+            int length = (int)j.getMember("length");
+            for (int i = 0; i < length; i++) {
+                Object x = j.getSlot(i);
+                if (x instanceof String) {
+                    String cat = (String)x;
+                    if (cat.startsWith("All articles "))
+                        continue;
+                    if (cat.startsWith("Articles with "))
+                        continue;
+                    if (cat.startsWith("Articles containing "))
+                        continue;                    
+                    if (cat.startsWith("Articles needing "))
+                        continue;                    
+                    if (cat.startsWith("CS1 errors:"))
+                        continue;
+                    if (cat.startsWith("Use dmy dates "))
+                        continue;
+                    if (cat.startsWith("Pages using citations with "))
+                        continue;
+                    if (cat.startsWith("Pages containing cite "))
+                        continue;
+                    if (cat.startsWith("Wikipedia articles "))
+                        continue;
+                    //All_accuracy_
+                    //Commons_category_with_
+                    //Articles_to_be_expanded_
+                    //Use_British_English_
+                    //All_Wikipedia_articles_
+                    //Wikipedia_indefinitely_
+                    //Articles_prone_to_
+                    //All_article_
+                    //Vague_or_ambiguous_
+                    
+                    String c = categoryToPage(cat);
+                    if (!c.equals(getCurrentPageTag()))
+                        categories.add(c);
+                }
+            }
+            
+            if (categories.size() > 0) {
+                NTag n = new NTag(getCurrentPageTag(), getCurrentPageTag(), categories);
+                core.publish(n);
+            }
+        }
+    }
+    
+    public static String categoryToPage(String category) {
+        return category.replaceAll(" ", "_");
+    }
+    
+}
+
 
 		//String url = urlOrTag;
 		//String[] sects = url.split("/");
@@ -248,7 +489,7 @@ public class WikiTagger extends BorderPane {
 //		} catch (Exception e) {
 //			webEngine.loadContent(e.toString());
 //		}
-    }
+//    }
 
 //        public void loadWikiPageOLD(String urlOrTag) {
 //		webEngine.loadContent("Loading...");
@@ -294,108 +535,3 @@ public class WikiTagger extends BorderPane {
 //
 //	}
 //
-//	@Override
-//	protected void onStart() {
-//		super.onStart();
-//		   runOnUiThread(new Runnable() {
-//			  @Override public void run() {
-//				  loadWikiPage("http://en.m.wikipedia.org/wiki/Human");
-//			  }
-//		   });
-//	}
-//
-//	@Override
-//	protected void onCreate(Bundle savedInstanceState) {
-//		super.onCreate(savedInstanceState);
-//		setContentView(R.layout.activity_tag);
-//
-//		// http://developer.android.com/guide/webapps/webview.html
-//
-//		webview = (WebView) findViewById(R.id.webview);
-//		webview.setWebViewClient(new MyWebViewClient());
-//
-//		//WebSettings webSettings = webview.getSettings();
-//		// webSettings.setJavaScriptEnabled(true);
-//
-//	}
-//
-//	@Override
-//	public boolean onCreateOptionsMenu(Menu menu) {
-//		// Inflate the menu; this adds items to the action bar if it is present.
-//		getMenuInflater().inflate(R.menu.tag, menu);
-//		return true;
-//	}
-    
-    
-    public String getCurrentPageTag() {
-        String l = webEngine.getLocation();
-        int p = l.lastIndexOf('/');
-        return l.substring(p+1);        
-    }
-    
-    public void tag(String url) {
-        String prefix = "tag://";
-        if (!url.startsWith(prefix)) {
-            return;
-        }
-        url = url.substring(prefix.length());
-
-        String wikiPrefix = "wiki/";
-        String tag;
-        if (url.startsWith(wikiPrefix)) {
-            tag = url.substring(wikiPrefix.length());
-        }
-        else if (url.startsWith("_")) {
-            tag = getCurrentPageTag();
-        }
-        else {
-            return;
-        }
-        
-        int hashLocation = tag.indexOf('#');
-        if (hashLocation!=-1) {
-            tag = tag.substring(0, hashLocation);
-        }
-        /*
-         Stage stage = new Stage();
-         Parent root = new Tagger(url);
-         stage.setScene(new Scene(root));
-         stage.setTitle("My modal window");
-         stage.initModality(Modality.WINDOW_MODAL);
-         stage.initOwner( getScene().getWindow() );
-         stage.showAndWait();    
-         */
-        setBottom(new OperatorTaggingPane(tag, this) {
-            @Override
-            public void onFinished(boolean save, String[] tags) {
-                WikiTagger.this.setBottom(null);
-            }
-        });
-
-    }
-
-    protected Node newControls() {
-        Button backButton = new Button("Back");
-        Button searchButton = new Button("Search");
-        TextField searchField = new TextField("");
-
-        BorderPane p = new BorderPane();
-        p.setCenter(searchField);
-        p.setRight(searchButton);
-        p.setLeft(backButton);
-
-        EventHandler<ActionEvent> search = new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                loadWikiSearchPage(searchField.getText());
-                searchField.setText("");
-            }
-        };
-
-        searchButton.setOnAction(search);
-        searchField.setOnAction(search);
-
-        return p;
-    }
-
-}
