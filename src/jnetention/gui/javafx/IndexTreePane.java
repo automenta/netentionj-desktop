@@ -8,6 +8,7 @@ package jnetention.gui.javafx;
 
 import com.google.common.base.Function;
 import static com.google.common.collect.Iterables.*;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
@@ -16,6 +17,7 @@ import javafx.scene.control.TreeView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import jnetention.Core;
+import jnetention.Core.NetworkUpdateEvent;
 import jnetention.Core.SaveEvent;
 import jnetention.EventEmitter.Observer;
 import jnetention.NObject;
@@ -26,7 +28,7 @@ import jnetention.NTag;
  *
  * @author me
  */
-public class IndexTreePane extends BorderPane implements Observer<SaveEvent> {
+public class IndexTreePane extends BorderPane implements Observer {
     private final TreeView<NObject> tv;
     //http://docs.oracle.com/javafx/2/ui_controls/tree-view.htm
     private final Core core;
@@ -55,24 +57,36 @@ public class IndexTreePane extends BorderPane implements Observer<SaveEvent> {
         visibleProperty().addListener(new ChangeListener<Boolean>() {
             @Override public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
                 if (isVisible()) {
-                    core.on(SaveEvent.class, IndexTreePane.this);
+                    addHandlers();
                     update();
                 }
                 else {
                     core.off(SaveEvent.class, IndexTreePane.this);
+                    core.off(NetworkUpdateEvent.class, IndexTreePane.this);
                 }
             }
         });
-        
+    
+        addHandlers();
         update();
         
         //setCenter(new ScrollPane(tv));
         setCenter(tv);
     }
 
-    @Override public void event(SaveEvent event) {
-        update();
-    }                        
+    protected void addHandlers() {
+        core.on(SaveEvent.class, IndexTreePane.this);
+        core.on(NetworkUpdateEvent.class, IndexTreePane.this);        
+    }
+    
+    @Override public void event(Object event) {
+        Platform.runLater(new Runnable() {
+            @Override public void run() {
+                update();
+            }            
+        });
+    }             
+    
     
     protected void update() {        
         root.getChildren().clear();

@@ -5,15 +5,19 @@
  */
 package jnetention;
 
+import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -21,6 +25,7 @@ import nars.core.NAR;
 import nars.io.TextInput;
 import nars.io.TextOutput;
 import net.tomp2p.connection.Bindings;
+import net.tomp2p.connection.DiscoverNetworks;
 import net.tomp2p.dht.FutureGet;
 import net.tomp2p.dht.FuturePut;
 import net.tomp2p.dht.PeerBuilderDHT;
@@ -29,6 +34,10 @@ import net.tomp2p.futures.FutureDiscover;
 import net.tomp2p.p2p.PeerBuilder;
 import net.tomp2p.peers.Number160;
 import net.tomp2p.peers.Number640;
+import net.tomp2p.peers.PeerAddress;
+import net.tomp2p.peers.PeerMapChangeListener;
+import net.tomp2p.peers.PeerStatatistic;
+import net.tomp2p.peers.PeerStatusListener;
 import net.tomp2p.storage.Data;
 import org.mapdb.BTreeMap;
 import org.mapdb.DB;
@@ -38,10 +47,17 @@ import org.mapdb.DBMaker;
  * Unifies DB & P2P features
  */
 public class Core extends EventEmitter {
+    private final static String Session_MYSELF = "myself";
+    private final BTreeMap<Object, Object> session;
+    private Bindings netBindings;
 
     public static class SaveEvent {
         public final NObject object;
         public SaveEvent(NObject object) { this.object = object;        }
+    }
+    public static class NetworkUpdateEvent {        
+        private final PeerAddress pa;
+        public NetworkUpdateEvent(PeerAddress p) { this.pa = p;        }
     }
 
     //LOGIC
@@ -59,7 +75,6 @@ public class Core extends EventEmitter {
     /** in-memory Database */
     public Core() {
         this(DBMaker.newMemoryDirectDB().make());        
-        become(newUser("Anonymous"));
     }
     
     /** file Database */
@@ -79,6 +94,13 @@ public class Core extends EventEmitter {
         this.db = db;
         // open existing an collection (or create new)
         data = db.getTreeMap("objects");
+        session = db.getTreeMap("session");
+
+        if (session.get(Session_MYSELF)==null) {            
+            //first time user
+            become(newUser("Anonymous " + NObject.UUID().substring(4)));
+        }
+        
         
         //    map.put(1, "one");
         //    map.put(2, "two");
@@ -98,16 +120,88 @@ public class Core extends EventEmitter {
     public Core online(int listenPort) throws IOException {
         
         Random r = new Random();
-        Bindings b = new Bindings();
+        netBindings = new Bindings();
         
+        if (listenPort == -1) {
+            //netBindings
+        }   
+        else {
+            netBindings.addProtocol(StandardProtocolFamily.INET).addAddress(InetAddress.getByName("127.0.0.1"));
+            
+        }
         
-        net = new PeerBuilder(new Number160(r)).ports(listenPort).bindings(b).enableBroadcast(true).start();
+        net = new PeerBuilder(new Number160(r)).ports(listenPort).bindings(netBindings).enableBroadcast(true).start();
         dht = new PeerBuilderDHT(net).start();
         
-        //net.getConfiguration().setBehindFirewall(true);        
         
+        //net.getConfiguration().setBehindFirewall(true);                
+        
+        System.out.println("Server started listening to " + DiscoverNetworks.discoverInterfaces(netBindings));
+	System.out.println("Accessible to outside networks at " + net.peerAddress());        
+        
+        emit(NetworkUpdateEvent.class, net.peerAddress());
+        
+
+        net.peerBean().addPeerStatusListeners(new PeerStatusListener() {
+
+            @Override
+            public boolean peerFailed(PeerAddress pa, PeerStatusListener.FailReason fr) {
+                //System.out.println("peer FAILED: " + pa + " " + fr);
+                return true;
+            }
+
+            @Override
+            public boolean peerFound(PeerAddress pa, PeerAddress referrer) {
+                //System.out.println("peer found: " + pa);
+                emit(NetworkUpdateEvent.class, pa);
+                
+                /*if (!pa.equals(net.peerAddress()))
+                    broadcast(myself);*/
+                
+                return true;
+            }
+            
+        });
+        
+        net.peerBean().peerMap().addPeerMapChangeListener(new PeerMapChangeListener() {
+            @Override
+            public void peerInserted(PeerAddress pa, boolean verified) {
+                if (verified) {
+                    //System.out.println("peer inserted: " + pa);
+                    emit(NetworkUpdateEvent.class, pa);
+                }
+            }
+
+            @Override
+            public void peerRemoved(PeerAddress pa, PeerStatatistic ps) {
+                //System.out.println("peer removed: " + pa + " "  + ps);
+                emit(NetworkUpdateEvent.class, pa);                
+            }
+
+            @Override
+            public void peerUpdated(PeerAddress pa, PeerStatatistic ps) {
+                //System.out.println("peer updated: " + pa + " "  + ps);
+                //System.out.println("DHT size=" + dht.storageLayer().get().size());
+                emit(NetworkUpdateEvent.class, pa);
+            }
+        });
         
         return this;
+    }
+    
+    /** online, listening at the wildcard address (max 1 per host) */
+    public Core online() throws IOException {
+        return online(-1);
+    }
+
+    
+    public FutureDiscover connect() throws UnknownHostException {        
+        return net.discover().inetAddress(net.peerAddress().inetAddress()).start();
+    }
+
+    public FutureDiscover connect(String host, int port) throws UnknownHostException {
+        InetAddress address = Inet4Address.getByName(host);
+        return net.discover().inetAddress(address).ports(port).start();
     }
     
     public Core offline() {
@@ -115,8 +209,37 @@ public class Core extends EventEmitter {
         return this;
     }
 
+    public Iterable<NObject> netValues() {
+        return Iterables.filter(Iterables.transform(dht.storageLayer().get().values(), 
+            new Function<Data,NObject>() {
+                @Override public NObject apply(final Data f) {
+                    try {
+                        final Object o = f.object();
+                        if (o instanceof NObject) {
+                            NObject n = (NObject)o;
+                            if (data.containsKey(n.id))
+                                return null;                                
+                            return n;
+                        }
+                        return null;
+                    } catch (Exception ex) {
+                        return null;
+                    }
+                }                
+        }), Predicates.notNull());        
+    }
+    
+    public Iterable<NObject> allValues() {
+        if (net!=null) {
+            return Iterables.concat(data.values(), netValues());
+        }
+        else {
+            return data.values();
+        }
+    }
+    
     public Iterable<NObject> tagged(final String tagID) {
-        return Iterables.filter(data.values(), new Predicate<NObject>(){
+        return Iterables.filter(allValues(), new Predicate<NObject>(){
             @Override public boolean apply(final NObject o) {
                 return o.hasTag(tagID);
             }            
@@ -145,7 +268,7 @@ public class Core extends EventEmitter {
         n.add(Tag.User);
         n.add(Tag.Human);
         n.add("@", new SpacePoint(40, -80));
-        save(n);
+        publish(n);
         return n;
     }
     
@@ -168,6 +291,7 @@ public class Core extends EventEmitter {
     public void become(NObject user) {
         //System.out.println("Become: " + user);
         myself = user;
+        session.put(Session_MYSELF, user.id);
     }
 
     
@@ -179,10 +303,7 @@ public class Core extends EventEmitter {
         remove(x.id);        
     }
 
-    public FutureDiscover connect(String host, int port) throws UnknownHostException {
-        InetAddress address = Inet4Address.getByName(host);
-        return net.discover().inetAddress(address).ports(port).start();
-    }
+
     
    protected Object netGet(Number160 hash) throws ClassNotFoundException, IOException  {
         FutureGet g = dht.get(hash).start();
@@ -197,26 +318,21 @@ public class Core extends EventEmitter {
         return netGet(Number160.createHash(id));
     }
    
-   protected boolean netPut(String id, Object o) throws IOException  {
-       if (dht == null) return false;
+   protected FuturePut netPut(String id, Object o) throws IOException  {
+        if (dht == null) return null;
        
-        FuturePut p = dht.put(Number160.createHash(id)).object(o).start();
-        p.awaitUninterruptibly();
-        if (p.isSuccess()) {
-            return true;
-        }
-        return false;
+        Number160 mkey = Number160.createHash(id);
+        FuturePut p = dht.put(mkey).object(o).start();
+        /*p.awaitUninterruptibly();
+        if (p.isSuccess())*/ 
+        return p;
     }   
-   protected boolean netPut(String id, Object key, Object value) throws IOException  {
-        if (dht == null) return false;
+   protected FuturePut netPut(String id, Object key, Object value) throws IOException  {
+        if (dht == null) return null;
        
-        FuturePut p = dht.put(Number160.createHash(id)).data(Number160.createHash(key.toString()), new Data(value)).start();
-        p.awaitUninterruptibly();
-        if (p.isSuccess()) {
-            return true;
-        }
-        
-        return false;
+        Number160 mkey = Number160.createHash(id);
+        FuturePut p = dht.put(mkey).data(Number160.createHash(key.toString()), new Data(value)).start();
+        return p;
     }     
    
     public List<NObject> netGetTagged(String tag) throws IOException, ClassNotFoundException {
@@ -239,7 +355,7 @@ public class Core extends EventEmitter {
                 String nid = entry.getValue().object().toString();
                 Object o = netGet(nid);
                 if (o instanceof NObject)
-                s.add((NObject)o);
+                    s.add((NObject)o);
             }            
             return s;
         }
@@ -265,27 +381,48 @@ public class Core extends EventEmitter {
     }
 
     
-    /** save to database and publish in DHT */
-    public void publish(NObject x) {
-        save(x);
-        
+    public void broadcast(NObject x) {
+        broadcast(x, false);
+    }
+    public void broadcast(NObject x, boolean block) {
         if (net!=null) {
             try {
-                netPut(x.id, x);
+                
+                
+                
+                FuturePut fp = netPut(x.id, x);
+                if (block)
+                    fp.awaitUninterruptibly();
 
                 //add to tag index        
-                for (String t : x.getTags()) {
-                    netPut(t + ".index", getNetID()+x.id, x.id);
+                Collection<String> tags = x.getTags();
+                for (String t : tags) {
+                    FuturePut ft = netPut(t + ".index", getNetID()+x.id, x.id);
+                    if (block)
+                        ft.awaitUninterruptibly();
                 }
+                
+                Number160 mkey = Number160.createHash(x.id);
+                net.broadcast(mkey).start();
+                    
             }
             catch (IOException e) {
                 System.err.println("publish: " + e);
             }
-        }
-        
+        }        
+    }
+    
+    /** save to database and publish in DHT */
+    public void publish(NObject x, boolean block) {
+        save(x);
+    
+        broadcast(x, block);
         
         
         //TODO save to geo-index
+    }
+    public void publish(NObject x) {
+        publish(x, false);        
     }
     
     public int getNetID() {

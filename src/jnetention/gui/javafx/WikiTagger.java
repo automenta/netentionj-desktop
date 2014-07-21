@@ -401,7 +401,7 @@ public class WikiTagger extends BorderPane {
                     n.add(t, pageTag);
                 }
 
-                core.save(n);
+                core.publish(n);
                 
             }
         });

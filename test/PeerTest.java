@@ -39,7 +39,7 @@ public class PeerTest {
             Core a = new Core().online(10000);
             Core b = new Core().online(10001);
             NObject au = a.newUser("a");
-            NObject bu = a.newUser("b");
+            NObject bu = b.newUser("b");
             
             final FutureDiscover fd = a.connect("localhost", 10001);
             
@@ -53,13 +53,19 @@ public class PeerTest {
             assert(fd.isSuccess());
             
             a.publish(au);
-            b.publish(bu);
+            //b.publish(bu, true);
             
-            Object bau = b.netGet(au.id);
+            Thread.sleep(500);
+            
+            System.out.println("Published, now Get");
+            
+            Object bau = a.netGet(au.id);
             assert(bau.getClass().equals(NObject.class));
             NObject nbau = (NObject)bau;
             
             assert(nbau.id.equals(au.id));
+
+            System.out.println("getTagged");
             
             List<NObject> bh = b.netGetTagged("Human");
             assert(bh.size()==2);

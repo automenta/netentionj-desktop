@@ -34,28 +34,18 @@ import org.jxmapviewer.viewer.GeoPosition;
  *
  * @author me
  */
-public class NetentionJFX extends Application {
+abstract public class NetentionJFX extends Application {
 
 
     private Core core;
 
-    public NetentionJFX() {
-        core = new Core();
-        /*
-        try {
-            core.online(10001);            
-        } catch (IOException ex) {
-            Logger.getLogger(NetentionJFX.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        */
-    }
-
-
     
+    abstract protected Core newCore(Parameters p);
     
     @Override
     public void start(Stage primaryStage) {
         
+        core = newCore(getParameters());
         
         
         TabPane tab = new TabPane();      
@@ -91,13 +81,6 @@ public class NetentionJFX extends Application {
         });
     }
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        launch(args);
-    }
-    
     public Button newAddButton() {
         Button b = new Button("+");
         b.setOnAction(new EventHandler<ActionEvent>() {
