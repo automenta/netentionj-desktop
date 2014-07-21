@@ -31,8 +31,7 @@ public class SpacetimeTagPlan {
     protected double timeWeight = 1.0;  //normalized to seconds
     protected double spaceWeight = 1.0; //meters
     protected double altWeight = 1.0; //meters
-    protected double tagWeight = 1.0;  //weight per each individual tag
-    protected int maxIterations = 10000;    
+    protected double tagWeight = 1.0;  //weight per each individual tag    
     protected double minPossibilityTagStrength = 0.02; //minimum strength that a resulting tag must be to be added to a generated Possibility
 
     
@@ -42,6 +41,10 @@ public class SpacetimeTagPlan {
     private final boolean spaceAltitude;
     private final boolean tags;
     public final List<NObject> objects;
+    private double timeWeightNext = timeWeight;
+    private double spaceWeightNext = spaceWeight;
+    private double tagWeightNext = tagWeight;
+    private double altWeightNext = altWeight;
     
     public static class TagVectorMapping extends ArrayList<String> {
         public final long timePeriod;
@@ -271,9 +274,30 @@ public class SpacetimeTagPlan {
             
     }
     
-    public List<Possibility> compute(int numCentroids, double fuzziness) {
+    public interface PlanResult {
+        public void onFinished(SpacetimeTagPlan plan, List<Possibility> possibilities);        
+        public void onError(SpacetimeTagPlan plan, Exception e);
+    }
+    
+    public void update(int numCentroids, int maxIterations, double fuzziness, PlanResult r) {
+        try {
+            List<Possibility> result = compute(numCentroids, maxIterations, fuzziness);
+            r.onFinished(this, result);
+            return;
+        }
+        catch (Exception e) {
+            r.onError(this, e);
+        }
+    }
+    
+    protected synchronized List<Possibility> compute(int numCentroids, int maxIterations, double fuzziness) {
         goals.clear();
         mapping.reset();
+        
+        this.spaceWeight = this.spaceWeightNext;
+        this.altWeight = this.altWeightNext;
+        this.timeWeight = this.timeWeightNext;
+        this.tagWeight = this.tagWeightNext;
         
         //2. compute goal vectors 
         for (NObject o : objects) {
@@ -298,22 +322,30 @@ public class SpacetimeTagPlan {
                 }
                 if (space) {
                     //TODO use earth surface distance measurement on non-normalized space lat,lon coordinates
-                    
-                    double dx = Math.abs(a[i] - b[i]);
-                    i++;
-                    double dy = Math.abs(a[i] - b[i]);
-                    i++;
-                    
-                    double ed = Math.sqrt( dx*dx + dy*dy );
-                    dist += ed * spaceWeight;
+
+                    if (spaceWeight!=0) {
+                        double dx = Math.abs(a[i] - b[i]);
+                        i++;
+                        double dy = Math.abs(a[i] - b[i]);
+                        i++;
+
+                        double ed = Math.sqrt( dx*dx + dy*dy );
+                        dist += ed * spaceWeight;
+                    }
+                    else {
+                        i+=2;
+                    }
                 }
                 if (spaceAltitude) {
                     dist += Math.abs(a[i] - b[i]) * altWeight;
                     i++;
                 }
                 if (tags) {
-                    for ( ;i < a.length; i++) {
-                        dist += Math.abs(a[i] - b[i]) * tagWeight;
+                    if ((a.length > 0) && (tagWeight!=0)) {
+                        double tagWeightFraction = tagWeight / (a.length);
+                        for ( ;i < a.length; i++) {
+                            dist += Math.abs(a[i] - b[i]) * tagWeightFraction;
+                        }
                     }
                 }
                 
@@ -403,10 +435,10 @@ public class SpacetimeTagPlan {
         return l;
     }
 
-    public void setTimeWeight(double timeWeight) {        this.timeWeight = timeWeight;    }
-    public void setSpaceWeight(double spaceWeight) {        this.spaceWeight = spaceWeight;    }
-    public void setTagWeight(double tagWeight) {       this.tagWeight = tagWeight;    }
-    public void setAltWeight(double altWeight) {        this.altWeight = altWeight;    }
+    public void setTimeWeight(double timeWeight) {        this.timeWeightNext = timeWeight;    }
+    public void setSpaceWeight(double spaceWeight) {        this.spaceWeightNext = spaceWeight;    }
+    public void setTagWeight(double tagWeight) {       this.tagWeightNext = tagWeight;    }
+    public void setAltWeight(double altWeight) {        this.altWeightNext = altWeight;    }
     public double getAltWeight() {  return altWeight;   }
     public double getSpaceWeight() { return spaceWeight;   }
     public double getTagWeight() {  return tagWeight;    }

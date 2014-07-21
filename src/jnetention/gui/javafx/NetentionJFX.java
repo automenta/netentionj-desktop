@@ -1,27 +1,34 @@
 package jnetention.gui.javafx;
 
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.embed.swing.SwingNode;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Accordion;
+import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
+import javafx.scene.web.HTMLEditor;
+import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javax.swing.SwingUtilities;
 import jnetention.Core;
+import jnetention.NObject;
 import jnetention.gui.swing.SwingMap;
-import jnetention.gui.swing.TimePanel;
 import nars.gui.NARControls;
+import org.jxmapviewer.viewer.GeoPosition;
 
 /**
  *
@@ -29,13 +36,10 @@ import nars.gui.NARControls;
  */
 public class NetentionJFX extends Application {
 
+
     private Core core;
 
-    
-    
-    @Override
-    public void start(Stage primaryStage) {
-        
+    public NetentionJFX() {
         core = new Core();
         /*
         try {
@@ -44,20 +48,33 @@ public class NetentionJFX extends Application {
             Logger.getLogger(NetentionJFX.class.getName()).log(Level.SEVERE, null, ex);
         }
         */
+    }
+
+
+    
+    
+    @Override
+    public void start(Stage primaryStage) {
         
         
-        TabPane tab = new TabPane();
+        
+        TabPane tab = new TabPane();      
+        tab.getTabs().add(newIndexTab());                
         tab.getTabs().add(newOptionsTab());                
         tab.getTabs().add(newWikiTab());
         tab.getTabs().add(newSpacetimeTab());
         tab.getTabs().add(newSpaceTab());
         tab.getTabs().add(newTimeTab());
-        tab.getTabs().add(newIndexTab());        
         tab.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tab.autosize();
         
-        StackPane root = new StackPane();
-        root.getChildren().add(tab);
+        BorderPane root = new BorderPane();
+        root.setCenter(tab);
+        
+        FlowPane menu = new FlowPane();
+        menu.getChildren().add(newAddButton());
+        
+        root.setBottom(menu);
         
         
         
@@ -81,6 +98,17 @@ public class NetentionJFX extends Application {
         launch(args);
     }
     
+    public Button newAddButton() {
+        Button b = new Button("+");
+        b.setOnAction(new EventHandler<ActionEvent>() {
+            @Override public void handle(ActionEvent event) {
+                popupObjectEdit(new NObject());
+            }
+
+        });
+        return b;
+    }
+    
     
     public Tab newWikiTab() {
         Tab t = new Tab("Wiki");
@@ -94,23 +122,34 @@ public class NetentionJFX extends Application {
         Tab t = new Tab("Space");
         
         SwingNode swingMap = new SwingNode();
-        swingMap.setContent(new SwingMap());
+        swingMap.visibleProperty().addListener(new ChangeListener<Boolean>() {
+            boolean firstvisible = true;
+            @Override
+            public void changed(ObservableValue<? extends Boolean> o, Boolean a, Boolean b) {
+                if (swingMap.isVisible() && firstvisible) {
+                    swingMap.setContent(new SwingMap( new GeoPosition(40.00, -80.00)));
+                    firstvisible = false;
+                }
+            }
+        });
         t.setContent(swingMap);
         return t;
     }
     public Tab newTimeTab() {
         Tab tab = new Tab("Time");
         
+        tab.setContent(new TimePanel());
         
-        
+        /*
         SwingNode timeNode = new SwingNode();        
         
         SwingUtilities.invokeLater(new Runnable() {
             @Override public void run() {
-                timeNode.setContent(new TimePanel());
+                //timeNode.setContent(new TimePanel());                
             }            
         });
         tab.setContent(timeNode);        
+                */
         
         
                 
@@ -136,6 +175,7 @@ public class NetentionJFX extends Application {
     }    
     public Tab newIndexTab() {
         Tab t = new Tab("Index");
+        t.setContent(new IndexTreePane(core));
         return t;
     }    
 
@@ -193,6 +233,32 @@ public class NetentionJFX extends Application {
         //core.data.sizeLong()
         
         return p;
+    }
+    
+    public void popupObjectEdit(NObject n) {
+        Stage st = new Stage();
+
+        BorderPane root = new BorderPane();
+        root.setCenter(new HTMLEditor());
+
+        st.setTitle(n.id);
+        st.setScene(new Scene(root));
+        st.show();
+    }
+
+    static void popupObjectView(Core core, NObject n) {
+        Stage st = new Stage();
+
+        BorderPane root = new BorderPane();
+        
+        WebView v = new WebView();
+        v.getEngine().loadContent(n.toHTML());
+        
+        root.setCenter(v);
+
+        st.setTitle(n.id);
+        st.setScene(new Scene(root));
+        st.show();
     }
     
 }

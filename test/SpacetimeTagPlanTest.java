@@ -2,6 +2,7 @@
 import java.util.List;
 import jnetention.gui.javafx.demo.SpacetimeTagPlanDemo;
 import jnetention.possibility.SpacetimeTagPlan;
+import jnetention.possibility.SpacetimeTagPlan.PlanResult;
 import jnetention.possibility.SpacetimeTagPlan.Possibility;
 import org.junit.Test;
 
@@ -32,30 +33,38 @@ public class SpacetimeTagPlanTest {
         int numTags = numObjects/2;
         int numCentroids = numObjects/3;
         double fuzziness = 1.5;
+        int iterations = 1024;
         
         SpacetimeTagPlan s = SpacetimeTagPlanDemo.newExampleSpacetimeTagPlan(numObjects, numTags, space);
-        System.out.println(s.mapping);
-        System.out.println(s.goals);
         
         int baseTags = space ? 3 : 1;
         
         assert(s.mapping.size() > baseTags);
         assert(s.mapping.size() <= (baseTags+numTags));
-        assert(s.goals.size() >= numObjects);
+
+        s.update(numCentroids, iterations, fuzziness, new PlanResult() {
+
+            @Override
+            public void onFinished(SpacetimeTagPlan s, List<Possibility> possibilities) {
+                assert(possibilities.size() == numCentroids);
+                
+                for (Possibility p : possibilities) {
+                    //System.out.println(p);
+
+                    assert(p.value.size() >= 2);
+
+                    //System.out.println("Center: " + StringUtil.arrayToString(p.getCenter()));
+                    //System.out.println("  Points (" + c.getPoints().size() + "): " + c.getPoints());
+                }
+            }
+
+            @Override
+            public void onError(SpacetimeTagPlan plan, Exception e) {
+                assert(false);
+            }
+            
+        });
         
-        List<Possibility> possibilities = s.compute(numCentroids, fuzziness);
-        assert(possibilities.size() == numCentroids);
-        
-        for (Possibility p : possibilities) {
-            System.out.println(p);
-            
-            assert(p.value.size() >= 2);
-            
-            //System.out.println("Center: " + StringUtil.arrayToString(p.getCenter()));
-            //System.out.println("  Points (" + c.getPoints().size() + "): " + c.getPoints());
-            
-            
-        }
         
         
         

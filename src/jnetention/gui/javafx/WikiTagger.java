@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Worker.State;
@@ -62,8 +63,12 @@ public class WikiTagger extends BorderPane {
             @Override
             public void changed(ObservableValue<? extends State> ov, State oldState, State newState) {
                 if (newState == State.SUCCEEDED) {
-                    processPage();
-                    webview.setVisible(true);
+                    Platform.runLater(new Runnable() {
+                        @Override public void run() {
+                            processPage();
+                            webview.setVisible(true);
+                        }                        
+                    });
                 }
             }
         });
@@ -82,7 +87,7 @@ public class WikiTagger extends BorderPane {
         visibleProperty().addListener(new ChangeListener<Boolean>() {
             boolean firstvisible = true;
             @Override
-            public void changed(final ObservableValue<? extends Boolean> observableValue, final Boolean aBoolean, final Boolean aBoolean2) {
+            public void changed(ObservableValue<? extends Boolean> o, Boolean a, Boolean b) {
                 if (isVisible() && firstvisible) {
                     loadWikiPage(startURL);                    
                     firstvisible = false;
@@ -325,7 +330,7 @@ public class WikiTagger extends BorderPane {
                     if (subject == null)
                         subject = core.getMyself();
                     
-                    addTag(subject, _tag, tags);
+                    tag(subject, tags, _tag);
                 }                    
                     
                 WikiTagger.this.setBottom(null);
@@ -381,13 +386,26 @@ public class WikiTagger extends BorderPane {
         return p;
     }
     
-    protected void addTag(NObject subject, String pageTag, Collection<String> tags) {
+    protected void tag(NObject subject, Collection<String> predicateTags, String pageTag) {
         
-        //TODO create Nobject
-        
-        for (String t : tags) {
-            core.knowProduct(subject.id, pageTag, t, 1.0, 0.95, 0.9);
-        }
+        Platform.runLater(new Runnable() {
+            @Override public void run() {
+                //TODO create Nobject
+                
+                NObject n = core.newObject(subject.name + ": " + pageTag + "=" + predicateTags);
+                
+                n.setSubject(subject.id);
+                
+                for (String t : predicateTags) {
+                    core.knowProduct(subject.id, pageTag, t, 1.0, 0.95, 0.9);
+                    n.add(t, pageTag);
+                }
+
+                core.save(n);
+                
+            }
+        });
+
     }
 
     public class WikiOntology {

@@ -1,0 +1,105 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+package jnetention.gui.javafx;
+
+import com.google.common.base.Function;
+import static com.google.common.collect.Iterables.*;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.event.EventHandler;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.BorderPane;
+import jnetention.Core;
+import jnetention.Core.SaveEvent;
+import jnetention.EventEmitter.Observer;
+import jnetention.NObject;
+import jnetention.NTag;
+
+
+/**
+ *
+ * @author me
+ */
+public class IndexTreePane extends BorderPane implements Observer<SaveEvent> {
+    private final TreeView<NObject> tv;
+    //http://docs.oracle.com/javafx/2/ui_controls/tree-view.htm
+    private final Core core;
+    private final TreeItem root;
+
+    public IndexTreePane(Core core) {
+        super();
+        
+        this.core = core;
+        
+        root = new TreeItem();        
+                
+        tv = new TreeView(root);
+        tv.setShowRoot(false);
+        tv.setEditable(false);
+
+        tv.setOnMouseClicked(new EventHandler<MouseEvent>(){
+            @Override public void handle(MouseEvent mouseEvent)    {            
+                if(mouseEvent.getClickCount() == 2) {
+                    NObject item = tv.getSelectionModel().getSelectedItem().getValue();
+                    onDoubleClick(item);
+                }
+            }
+        });
+        
+        visibleProperty().addListener(new ChangeListener<Boolean>() {
+            @Override public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+                if (isVisible()) {
+                    core.on(SaveEvent.class, IndexTreePane.this);
+                    update();
+                }
+                else {
+                    core.off(SaveEvent.class, IndexTreePane.this);
+                }
+            }
+        });
+        
+        update();
+        
+        //setCenter(new ScrollPane(tv));
+        setCenter(tv);
+    }
+
+    @Override public void event(SaveEvent event) {
+        update();
+    }                        
+    
+    protected void update() {        
+        root.getChildren().clear();
+        for (NObject t : core.getTagRoots()) {
+            root.getChildren().add(newTagTree((NTag)t));
+        }                
+    }
+    
+    protected TreeItem newTagTree(final NTag t) {
+        TreeItem<NObject> i = new TreeItem(t);
+                              
+        //add instances of the tag        
+        addAll(i.getChildren(), transform(core.tagged(t.id), new Function<NObject,TreeItem<NObject>>() {
+            @Override public TreeItem apply(final NObject f) {
+                return newInstanceItem(f);
+            }
+        }));
+        
+        return i;        
+    }
+    
+    protected TreeItem<NObject> newInstanceItem(NObject f) {
+        TreeItem<NObject> t = new TreeItem<NObject>(f);        
+        return t;
+    }
+    
+    protected void onDoubleClick(NObject item) {
+        NetentionJFX.popupObjectView(core, item);
+    }
+}

@@ -6,7 +6,13 @@
 
 package jnetention;
 
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.collect.Iterators;
+import static com.google.common.collect.Iterators.*;
 import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.Sets;
 import com.google.common.primitives.Longs;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -14,12 +20,10 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
-import java.util.UUID;
-import org.apache.commons.math3.random.RandomGenerator;
 
 /**
  *
@@ -31,6 +35,7 @@ public class NObject extends Value implements Serializable, Comparable {
     //public long modifiedAt;
     public String name;
     public String author;
+    private String subject;
     
     public NObject() {
         this("");
@@ -77,33 +82,54 @@ public class NObject extends Value implements Serializable, Comparable {
         return id.hashCode(); 
     }
     
-    public boolean hasTag(String t) {
-        //TODO optimize with iterator
-        return getTags().contains(t);        
-    }
-
     public boolean hasTag(final Tag t) {
         return hasTag(t.toString());
     }
     
+    public boolean hasTag(final String t) {
+        return Iterators.contains(iterateTags(true), t);
+    }
+
     public Set<String> getTags() {
+        return Sets.newHashSet(iterateTags(true));
+    }
+    
+    public Iterator<String> iterateTags(boolean includeObjectValues) {
+        Iterator<String> i = value.keySet().iterator();
+        if (includeObjectValues) {
+            i = concat(i, filter(transform(value.entries().iterator(), new Function<Map.Entry<String,Object>, String>() {
+
+                @Override
+                public String apply(Map.Entry<String, Object> e) {
+                    Object v = e.getValue();
+                    if (v instanceof Ref)
+                        return ((Ref)v).object;
+                    return null;
+                }
+
+            }), Predicates.notNull()));
+        }
+        return i;
+    }
+    
+    public Set<String> getTags(final Predicate<String> p) {
         Set<String> s = new HashSet();
         for (Map.Entry<String, Object> v : value.entries()) {
             if (v.getValue() instanceof Double) {
-                s.add(v.getKey());
+                if (p.apply(v.getKey()))
+                    s.add(v.getKey());
             }
         }
-        return s;
-        
-    }
+        return s;        
+    }    
 
     @Override
     public String toString() {
-        return id + "," + author + "," + createdAt + "=" + value;
+        return name;
     }
     
-    public String toLongString() {
-        return id + "," + author + "," + new Date(createdAt).toString() + "=" + value;
+    public String toStringDetailed() {
+        return id + "," + name + "," + author + "," + subject + "," + new Date(createdAt).toString() + "=" + value;
     }
 
     public <X> List<X> values(Class<X> c) {
@@ -139,13 +165,20 @@ public class NObject extends Value implements Serializable, Comparable {
     }
     
     
-    public static String UUID() {
-        
+    public static String UUID() {        
         long a = (long)(Math.random() * Long.MAX_VALUE);
         long b = (long)(Math.random() * Long.MAX_VALUE);
         
         return Base64.getEncoder().encodeToString( Longs.toByteArray(a) ).substring(0, 11) 
                 + Base64.getEncoder().encodeToString( Longs.toByteArray(b) ).substring(0, 11);
+    }
+
+    public String toHTML() {
+        return "<pre> " + toStringDetailed()+ "</pre>";
+    }
+
+    public void setSubject(String id) {
+        subject = id;
     }
     
 }

@@ -6,17 +6,26 @@
 
 package jnetention;
 
+import com.google.common.base.Predicate;
 import java.util.List;
-import jnetention.NObject;
-import jnetention.Tag;
+import java.util.Set;
 
 /**
  * Tag = data class
  * @author me
  */
 public class NTag extends NObject {
+
+    static NTag asNObject(final Tag sysTag) {
+        //TODO cache
+        return new NTag(sysTag.name(), sysTag.name());
+    }
     
     String description;    
+
+    protected NTag(String id, String name) {
+        this(id, name, (String)null);
+    }
 
     public NTag(String id, String name, String extend) {
         super(name, id);
@@ -37,6 +46,14 @@ public class NTag extends NObject {
     
     public void mergeFrom(NTag c) {
         //TODO
+    }
+
+    public Set<String> getSuperTags() {
+        return getTags(new Predicate<String>() {
+            @Override public boolean apply(String t) {
+                return (!t.equals(Tag.tag.toString()));
+            }
+        });
     }
 
     

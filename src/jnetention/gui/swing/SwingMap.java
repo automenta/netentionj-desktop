@@ -36,7 +36,7 @@ public class SwingMap extends JPanel {
     /**
      * @param args the program args (ignored)
      */
-    public SwingMap() {
+    public SwingMap(GeoPosition initialPosition) {
         super(new BorderLayout());
         
         // Create a TileFactoryInfo for OpenStreetMap
@@ -51,8 +51,6 @@ public class SwingMap extends JPanel {
         // Setup JXMapViewer
         JXMapViewer mapViewer = new JXMapViewer();
         mapViewer.setTileFactory(tileFactory);
-
-        GeoPosition initialPosition = new GeoPosition(40.00, -80.00);
 
         // Set the focus
         mapViewer.setZoom(7);

@@ -6,14 +6,14 @@
 package jnetention;
 
 import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -37,7 +37,12 @@ import org.mapdb.DBMaker;
 /**
  * Unifies DB & P2P features
  */
-public class Core {
+public class Core extends EventEmitter {
+
+    public static class SaveEvent {
+        public final NObject object;
+        public SaveEvent(NObject object) { this.object = object;        }
+    }
 
     //LOGIC
     public final NAR logic;
@@ -109,15 +114,29 @@ public class Core {
         net.shutdown();
         return this;
     }
-    
-    public Collection<NObject> getUsers() {
-        return Collections2.filter(data.values(), new Predicate<NObject>(){
 
-            @Override
-            public boolean apply(NObject t) {
-                return t.hasTag(Tag.User);
+    public Iterable<NObject> tagged(final String tagID) {
+        return Iterables.filter(data.values(), new Predicate<NObject>(){
+            @Override public boolean apply(final NObject o) {
+                return o.hasTag(tagID);
             }            
-        });
+        });        
+    }    
+    public Iterable<NObject> tagged(final Tag t) {
+        return tagged(t.name());
+    }
+    
+    public List<NObject> getUsers() {        
+        return Lists.newArrayList(tagged(Tag.User));
+    }
+    
+    public List<NObject> getTags() {         
+        List<NObject> c = Lists.newArrayList(tagged(Tag.tag));
+        
+        for (Tag sysTag : Tag.values())
+            c.add(NTag.asNObject(sysTag));
+        
+        return c;
     }
     
     public NObject newUser(String name) {
@@ -147,16 +166,10 @@ public class Core {
     }
     
     public void become(NObject user) {
-        System.out.println("Become: " + user);
+        //System.out.println("Become: " + user);
         myself = user;
     }
-    
-    /** save nobject to database */
-    public void save(NObject x) {
-        NObject removed = data.put(x.id, x);
-        
-        index(removed, x);
-    }
+
     
     public void remove(String nobjectID) {
         data.remove(nobjectID);
@@ -233,6 +246,25 @@ public class Core {
         return null;
     }
 
+    
+    /** save nobject to database */
+    public void save(NObject x) {
+        NObject removed = data.put(x.id, x);        
+        index(removed, x);
+        
+        emit(SaveEvent.class, x);
+    }
+    
+    /** batch save nobject to database */    
+    public void save(Iterable<NObject> y) {
+        for (NObject x : y) {
+            NObject removed = data.put(x.id, x);
+            index(removed, x);
+        }            
+        emit(SaveEvent.class, null);
+    }
+
+    
     /** save to database and publish in DHT */
     public void publish(NObject x) {
         save(x);
@@ -250,6 +282,8 @@ public class Core {
                 System.err.println("publish: " + e);
             }
         }
+        
+        
         
         //TODO save to geo-index
     }
@@ -279,16 +313,18 @@ public class Core {
                         continue;
                         
                     String superclass = e.getKey();
+                    if (superclass.equals("tag"))
+                        continue;
                     
                     Double strength = (Double)e.getValue();
                     double freq = (0.5 + strength/2.0) * (1.0);
                     double conf = 0.95;
                     
+
                     String s = "<" + n(clas) + " --> " + n(superclass) + ">. %" + freq + ";" + conf + "%";
-                    
                     new TextInput(logic, s);
                     think();
-                    
+
                 }
                 
             }
@@ -308,7 +344,7 @@ public class Core {
     }
     
     public void think() {
-        logic.tick();
+        logic.step(1);
     }
 
     public static String n(String s) {
@@ -321,6 +357,19 @@ public class Core {
         if (tag!=null && tag.isClass())
             return tag;
         return null;
+    }
+
+    public Iterable<NObject> getTagRoots() {
+        return Iterables.filter(getTags(), new Predicate<NObject>() {
+            @Override public boolean apply(NObject t) {
+                try {
+                    NTag tag = (NTag)t;
+                    return tag.getSuperTags().isEmpty();
+                }
+                catch (Exception e) { }
+                return false;
+            }            
+        });
     }
     
 }
