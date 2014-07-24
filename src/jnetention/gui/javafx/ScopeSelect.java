@@ -23,5 +23,8 @@ public class ScopeSelect extends ChoiceBox<Scope> {
         getSelectionModel().select(defaultScope);
     }
     
+    public Scope getScope() {
+        return getSelectionModel().getSelectedItem();
+    }
     
 }

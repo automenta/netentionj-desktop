@@ -6,36 +6,31 @@
 
 package jnetention.gui.javafx;
 
-import de.jensd.fx.fontawesome.AwesomeDude;
-import de.jensd.fx.fontawesome.AwesomeIcon;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import jnetention.Core;
 import jnetention.NObject;
+import jnetention.Scope;
 
 /**
  *
  * @author me
  */
 public abstract class OperatorTagPane extends BorderPane {
-    private final WikiTagger outer;
+    private final WikiBrowser outer;
 
-    public OperatorTagPane(Core core, String tag, final WikiTagger outer) {
+    public OperatorTagPane(Core core, String tag, final WikiBrowser outer) {
         super();
         this.outer = outer;
         autosize();
@@ -69,25 +64,22 @@ public abstract class OperatorTagPane extends BorderPane {
         
         TilePane n = new TilePane(n1,n2,n3);
         
-        SubjectSelect s = new SubjectSelect(core.getUsers());
-        s.getSelectionModel().select(core.getMyself());
         
         VBox c = new VBox(k, n);
         c.setAlignment(Pos.CENTER);
         c.setPadding(new Insets(4,4,8,4));
         setCenter(c);
         
-        ScopeSelect scope = new ScopeSelect();
         
-        Button cancelButton = AwesomeDude.createIconButton(AwesomeIcon.UNDO);
-        cancelButton.setTooltip(new Tooltip("Cancel"));
-        
-        Button saveButton = AwesomeDude.createIconButton(AwesomeIcon.SAVE);
-        saveButton.setTooltip(new Tooltip("Save"));
-        
-        saveButton.setDefaultButton(true);
-        saveButton.setOnAction(new EventHandler() {
-            @Override public void handle(javafx.event.Event event) { 
+        setBottom(new SaveObjectPane(core) {
+
+            @Override
+            public void onCancel() {
+                onFinished(false, null, null);
+            }
+
+            @Override
+            public void onSave(Scope scope, NObject subject) {
                 List<String> tags = new ArrayList();
                 
                 ToggleButton selectedK = (ToggleButton)gk.getSelectedToggle();
@@ -96,27 +88,13 @@ public abstract class OperatorTagPane extends BorderPane {
                     tags.add(selectedK.getText());
                 if (selectedN!=null)
                     tags.add(selectedN.getText());
-                        
-                onFinished(true, s.getSelectionModel().getSelectedItem(), tags); 
+                
+                onFinished(true, subject, tags);
             }
+            
         });
-        cancelButton.setOnAction(new EventHandler() {
-            @Override public void handle(javafx.event.Event event) { onFinished(false, null, null); }
-        });
-        
-        BorderPane b = new BorderPane();
-        b.setLeft(s);
-        
-        FlowPane fp = new FlowPane(scope, cancelButton, saveButton);
-        fp.setAlignment(Pos.BOTTOM_RIGHT);
-        
-        b.setCenter(fp);
-        setBottom(b);
     }
-    
-    
-
+       
     public abstract void onFinished(boolean save, NObject subject, Collection<String>values);
-    
-    
+        
 }

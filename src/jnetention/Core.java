@@ -98,7 +98,7 @@ public class Core extends EventEmitter {
 
         if (session.get(Session_MYSELF)==null) {            
             //first time user
-            become(newUser("Anonymous " + NObject.UUID().substring(4)));
+            become(newUser("Anonymous " + NObject.UUID().substring(0,4)));
         }
         
         
@@ -446,18 +446,18 @@ public class Core extends EventEmitter {
             if (next.isClass()) {
                 String clas = next.id;
                 for (Map.Entry<String, Object> e : next.value.entries()) {
-                    if (!(e.getValue() instanceof Double))
-                        continue;
-                        
                     String superclass = e.getKey();
                     if (superclass.equals("tag"))
                         continue;
+                    
+                    if (getTag(superclass)==null) {
+                        save(new NTag(superclass));
+                    }
                     
                     Double strength = (Double)e.getValue();
                     double freq = (0.5 + strength/2.0) * (1.0);
                     double conf = 0.95;
                     
-
                     String s = "<" + n(clas) + " --> " + n(superclass) + ">. %" + freq + ";" + conf + "%";
                     new TextInput(logic, s);
                     think();

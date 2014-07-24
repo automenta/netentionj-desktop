@@ -21,8 +21,12 @@ public class NTag extends NObject {
         return new NTag(sysTag.name(), sysTag.name());
     }
     
-    String description;    
+    String description;
 
+    protected NTag(String id) {
+        this(id, id);
+    }
+    
     protected NTag(String id, String name) {
         this(id, name, (String)null);
     }

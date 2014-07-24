@@ -12,6 +12,7 @@ import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.input.MouseEvent;
@@ -22,6 +23,7 @@ import jnetention.Core.SaveEvent;
 import jnetention.EventEmitter.Observer;
 import jnetention.NObject;
 import jnetention.NTag;
+import jnetention.gui.javafx.TaggerPane.TagReceiver;
 
 
 /**
@@ -33,11 +35,13 @@ public class IndexTreePane extends BorderPane implements Observer {
     //http://docs.oracle.com/javafx/2/ui_controls/tree-view.htm
     private final Core core;
     private final TreeItem root;
+    private final TagReceiver tagger;
 
-    public IndexTreePane(Core core) {
+    public IndexTreePane(Core core, TagReceiver tagger) {
         super();
         
         this.core = core;
+        this.tagger = tagger;
         
         root = new TreeItem();        
                 
@@ -70,8 +74,11 @@ public class IndexTreePane extends BorderPane implements Observer {
         addHandlers();
         update();
         
-        //setCenter(new ScrollPane(tv));
-        setCenter(tv);
+        
+        ScrollPane sp = new ScrollPane(tv);
+        sp.setFitToWidth(true);
+        sp.setFitToHeight(true);        
+        setCenter(sp);
     }
 
     protected void addHandlers() {
@@ -114,6 +121,8 @@ public class IndexTreePane extends BorderPane implements Observer {
     }
     
     protected void onDoubleClick(NObject item) {
-        NetentionJFX.popupObjectView(core, item);
+        if (tagger!=null) {
+            tagger.onTagSelected(item.id);
+        }        
     }
 }

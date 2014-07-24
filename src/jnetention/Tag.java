@@ -11,12 +11,13 @@ package jnetention;
  * default/system tags
  */
 public enum Tag {
+    
     Human, User,
     
     Learn, Do, Teach,
     
+    Can, Need, Not,
+    
     tag, property
-    
-    
-    
+           
 }

@@ -2,6 +2,7 @@ package jnetention.run;
 
 import jnetention.Core;
 import static javafx.application.Application.launch;
+import javafx.stage.Stage;
 import jnetention.gui.javafx.NetentionJFX;
 
 /**
@@ -13,6 +14,14 @@ public class RunMemory extends NetentionJFX {
     protected Core newCore(Parameters p) {
         return new Core();
     }
+
+    @Override
+    public void start(Stage primaryStage) {
+        super.start(primaryStage); //To change body of generated methods, choose Tools | Templates.
+        popupObjectEdit(core.newObject("X"));
+    }
+    
+    
     
     public static void main(String[] args) {
         launch(args);

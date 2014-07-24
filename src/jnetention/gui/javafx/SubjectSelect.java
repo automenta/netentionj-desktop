@@ -47,6 +47,7 @@ public class SubjectSelect extends ComboBox<NObject> {
         setTooltip(new Tooltip("Who?"));        
         
         setEditable(true);
+        
 
         
     }

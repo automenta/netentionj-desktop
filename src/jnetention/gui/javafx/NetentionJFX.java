@@ -19,7 +19,6 @@ import javafx.scene.control.TitledPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Pane;
-import javafx.scene.web.HTMLEditor;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
@@ -37,7 +36,7 @@ import org.jxmapviewer.viewer.GeoPosition;
 abstract public class NetentionJFX extends Application {
 
 
-    private Core core;
+    public Core core;
 
     
     abstract protected Core newCore(Parameters p);
@@ -70,7 +69,7 @@ abstract public class NetentionJFX extends Application {
         
         Scene scene = new Scene(root, 350, 650);
         
-        primaryStage.setTitle("Netention (JavaFX GUI)");
+        primaryStage.setTitle(core.getMyself().id);
         primaryStage.setScene(scene);
         primaryStage.show();
         primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
@@ -96,7 +95,7 @@ abstract public class NetentionJFX extends Application {
     public Tab newWikiTab() {
         Tab t = new Tab("Wiki");
         
-        t.setContent(new WikiTagger(core, "ICBM"));
+        t.setContent(new WikiTagger(core, "Self"));
         
         return t;
     }    
@@ -158,7 +157,13 @@ abstract public class NetentionJFX extends Application {
     }    
     public Tab newIndexTab() {
         Tab t = new Tab("Index");
-        t.setContent(new IndexTreePane(core));
+        t.setContent(new IndexTreePane(core, new TaggerPane.TagReceiver() {
+
+            @Override
+            public void onTagSelected(String s) {
+                NetentionJFX.popupObjectView(core, core.data.get(s));
+            }
+        }));
         return t;
     }    
 
@@ -221,11 +226,9 @@ abstract public class NetentionJFX extends Application {
     public void popupObjectEdit(NObject n) {
         Stage st = new Stage();
 
-        BorderPane root = new BorderPane();
-        root.setCenter(new HTMLEditor());
-
         st.setTitle(n.id);
-        st.setScene(new Scene(root));
+        st.setScene(new Scene(new ObjectEditPane(core, n), 600, 400));
+        
         st.show();
     }
 
@@ -235,7 +238,7 @@ abstract public class NetentionJFX extends Application {
         BorderPane root = new BorderPane();
         
         WebView v = new WebView();
-        v.getEngine().loadContent(n.toHTML());
+        v.getEngine().loadContent(ObjectEditPane.toHTML(n));
         
         root.setCenter(v);
 

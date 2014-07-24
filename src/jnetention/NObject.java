@@ -173,9 +173,7 @@ public class NObject extends Value implements Serializable, Comparable {
                 + Base64.getEncoder().encodeToString( Longs.toByteArray(b) ).substring(0, 11);
     }
 
-    public String toHTML() {
-        return "<pre> " + toStringDetailed()+ "</pre>";
-    }
+
 
     public void setSubject(String id) {
         subject = id;
