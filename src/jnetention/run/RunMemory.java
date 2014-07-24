@@ -4,6 +4,7 @@ import jnetention.Core;
 import static javafx.application.Application.launch;
 import javafx.stage.Stage;
 import jnetention.gui.javafx.NetentionJFX;
+import jnetention.gui.javafx.NodeControlPane;
 
 /**
  * Runs in-memory only (no disk saving)
@@ -18,7 +19,7 @@ public class RunMemory extends NetentionJFX {
     @Override
     public void start(Stage primaryStage) {
         super.start(primaryStage); //To change body of generated methods, choose Tools | Templates.
-        popupObjectEdit(core.newObject("X"));
+        NodeControlPane.popupObjectEdit(core, core.newObject("X"));
     }
     
     
