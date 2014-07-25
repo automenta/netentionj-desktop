@@ -28,7 +28,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import org.jewelsea.willow.Willow;
+import jnetention.run.WebBrowser;
 import org.jewelsea.willow.util.ResourceUtil;
 
 import static org.jewelsea.willow.util.ResourceUtil.getString;
@@ -37,7 +37,7 @@ import static org.jewelsea.willow.util.ResourceUtil.getString;
  * Sidebar panel for showing Benchmark information
  */
 public class BenchPanel extends TitledPane {
-    public BenchPanel(final Willow chrome) {
+    public BenchPanel(final WebBrowser chrome) {
         // create a layout container for the panel.
         VBox benchPanel = new VBox();
         benchPanel.setSpacing(5);
@@ -76,7 +76,7 @@ public class BenchPanel extends TitledPane {
                 benchLink.getStyleClass().add("icon-button");
                 benchLink.setAlignment(Pos.CENTER_LEFT);
                 benchLink.setContentDisplay(ContentDisplay.LEFT);
-                benchLink.setOnAction(actionEvent -> chrome.getBrowser().navTo(link[1]));
+                benchLink.setOnAction(actionEvent -> chrome.getBrowser().go(link[1]));
                 benchPanel.getChildren().add(benchLink);
                 benchLink.setMaxWidth(Double.MAX_VALUE);
                 VBox.setMargin(benchLink, new Insets(0, 5, 0, 5));
@@ -85,7 +85,7 @@ public class BenchPanel extends TitledPane {
                 benchLink.setToggleGroup(benchToggleGroup);
 
                 // add a graphic to the link.
-                if (!link[2].equals("")) {
+                if (!link[2].isEmpty()) {
                     final Image image = ResourceUtil.getImage(link[2]);
                     final ImageView imageView = new ImageView(image);
                     imageView.setPreserveRatio(true);

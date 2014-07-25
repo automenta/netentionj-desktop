@@ -22,6 +22,8 @@
 .root {
     //-fx-base: antiquewhite;
     -fx-light-text-color: derive(#292929, 20%);
+    -fx-font-size: 12px;
+    -fx-font-family: Arial, sans;
 }
 .current-menu {
     -fx-font-weight: bold;
@@ -36,8 +38,8 @@
 }
 
 .status-background {
-    -fx-background-color: rgba(179, 179, 179, 0.65);
-    -fx-border-color: rgba(245, 222, 179, 0.85)
+    //-fx-background-color: rgba(179, 179, 179, 0.65);
+    //-fx-border-color: rgba(245, 222, 179, 0.85)
 }
 
 .icon-button {

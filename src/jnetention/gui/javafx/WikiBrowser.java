@@ -39,7 +39,8 @@ import org.w3c.dom.events.EventListener;
 import org.w3c.dom.events.EventTarget;
 
 /**
- *
+ * TODO wikibrowser does not need to modify any DOM links because they will be intercepted.
+ * this will make processing the page faster.
  * @author me
  */
 abstract public class WikiBrowser extends BorderPane {
@@ -375,7 +376,7 @@ abstract public class WikiBrowser extends BorderPane {
     public class WikiOntology {
 
         public WikiOntology() {            
-            new TextInput(core.logic, "<<(*,$1,$2) --> WikiLink> ==> <$1 <-> $2>>. %0.25;0.80%");
+            new TextInput(core.logic, "<<(*,$1,$2) --> WikiLink> ==> <$1 <-> $2>>. %0.99;0.80%");
             core.think();            
         }
 

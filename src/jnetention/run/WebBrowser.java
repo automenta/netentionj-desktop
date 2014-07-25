@@ -36,6 +36,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Control;
+import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
@@ -48,20 +49,30 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import jnetention.Core;
 import jnetention.gui.javafx.NodeControlPane;
+import org.jewelsea.willow.browser.BrowserTab;
 import org.jewelsea.willow.browser.BrowserWindow;
 import org.jewelsea.willow.browser.LoadingProgressDisplay;
 import org.jewelsea.willow.browser.StatusDisplay;
 import org.jewelsea.willow.browser.TabManager;
+import org.jewelsea.willow.browser.UITab;
 import org.jewelsea.willow.navigation.NavTools;
 import org.jewelsea.willow.util.DebugUtil;
 import org.jewelsea.willow.util.ResourceUtil;
 import static org.jewelsea.willow.util.ResourceUtil.getString;
 
 public class WebBrowser extends Application {
+    final public static long start = System.currentTimeMillis();
+    static {        
+        System.out.println("Static start " + (System.currentTimeMillis() - start)/1000.0);
+    }
+    
+    
     public static final String APPLICATION_ICON =
             "WillowTreeIcon.png";
+    
     public static final String DEFAULT_HOME_LOCATION =
-            "http://docs.oracle.com/javafx/2/get_started/animation.htm";
+            "http://news.google.com";
+    
     public static final String STYLESHEET =
             "org/jewelsea/willow/willow.css";
     public StringProperty homeLocationProperty = new SimpleStringProperty(DEFAULT_HOME_LOCATION);
@@ -75,21 +86,26 @@ public class WebBrowser extends Application {
     private ChangeListener<String> browserLocFieldChangeListener;
     private ChangeListener<String> chromeLocFieldChangeListener;
 
-    private Core core;
+    private Core core = new Core();
 
     @Override
     public void start(final Stage stage) throws MalformedURLException, UnsupportedEncodingException {
+        System.out.println("WebBrowser.start()" + (System.currentTimeMillis() - start)/1000.0);        
+        
         // set the title bar to the title of the web page (if there is one).
         stage.setTitle(getString("browser.name"));
 
         // initialize the stuff which can't be initialized in the init method due to stupid threading issues.
-        tabManager = new TabManager(chromeLocField);
+        tabManager = new TabManager(core, chromeLocField);
         
         
-        core = new Core();
+        System.out.println("created tabs" + (System.currentTimeMillis() - start)/1000.0);        
+        
         
         //sidebar = SideBar.createSidebar(this);        
         sidebar = new NodeControlPane(core);
+        
+        System.out.println("created sidebar" + (System.currentTimeMillis() - start)/1000.0);        
 
         // initialize the location field in the Chrome.
         chromeLocField.setStyle("-fx-font-size: 14;");
@@ -97,7 +113,7 @@ public class WebBrowser extends Application {
         chromeLocField.setTooltip(new Tooltip(getString("location.tooltip")));
         chromeLocField.setOnKeyReleased(keyEvent -> {
             if (keyEvent.getCode().equals(KeyCode.ENTER)) {
-                getBrowser().navTo(chromeLocField.getText());
+                go(chromeLocField.getText());
             }
         });
 
@@ -105,6 +121,8 @@ public class WebBrowser extends Application {
         HBox.setHgrow(chromeLocField, Priority.ALWAYS);
         final Pane navPane = NavTools.createNavPane(this);
         mainLayout.setTop(navPane);
+
+        System.out.println("navpane added " + (System.currentTimeMillis() - start)/1000.0);
 
         // add an overlay layer over the main layout for effects and status messages.
         final AnchorPane overlayLayer = new AnchorPane();
@@ -117,8 +135,8 @@ public class WebBrowser extends Application {
                 browserChanged(oldBrowser, newBrowser, stage, overlayLayer)
         );
 
-        // we need to manually handle the change from no browser at all to an initial browser.
-        browserChanged(null, getBrowser(), stage, overlayLayer);
+        System.out.println("creating scene " + (System.currentTimeMillis() - start)/1000.0);
+
 
         // create the scene.
         final Scene scene = new Scene(
@@ -133,6 +151,7 @@ public class WebBrowser extends Application {
         overlayLayer.prefHeightProperty().bind(scene.heightProperty());
         overlayLayer.prefWidthProperty().bind(scene.widthProperty());
 
+        System.out.println("scene created " + (System.currentTimeMillis() - start)/1000.0);        
         
         ScrollPane sidebarScroll = new ScrollPane(sidebar);
         sidebarScroll.setFitToHeight(true);
@@ -140,12 +159,7 @@ public class WebBrowser extends Application {
         sidebarScroll.setMinWidth(250);
         mainLayout.setLeft(sidebarScroll);
 
-        // show the scene.
-        stage.setScene(scene);
-        stage.show();
-
-        // nav to the home location
-        getBrowser().navTo(homeLocationProperty.get());
+        System.out.println("sidebar added " + (System.currentTimeMillis() - start)/1000.0);        
 
         // highlight the entire text if we click on the chromeLocField so that it can be easily changed.
         chromeLocField.focusedProperty().addListener((observableValue, from, to) -> {
@@ -195,6 +209,20 @@ public class WebBrowser extends Application {
 
         // debugging routine.
         //debug(scene);
+    
+        // nav to the home location
+        
+        go(homeLocationProperty.get());
+        
+        // we need to manually handle the change from no browser at all to an initial browser.
+        browserChanged(null, getBrowser(), stage, overlayLayer);
+
+        System.out.println("WebBrowser.start() finished " + (System.currentTimeMillis() - start)/1000.0);        
+    
+        // show the scene.
+        stage.setScene(scene);
+        stage.show();
+
     }
 
     private void debug(final Scene scene) {
@@ -267,77 +295,95 @@ public class WebBrowser extends Application {
      * @param stage        the stage displaying the chrome.
      * @param overlayLayer the overlay layer for status and other information in the chrome.
      */
-    private void browserChanged(final BrowserWindow oldBrowser, final BrowserWindow newBrowser, final Stage stage, AnchorPane overlayLayer) {
-        // cleanup the links between the chrome's location field and the old browser's location field.
-        if (oldBrowser != null && browserLocFieldChangeListener != null) {
-            oldBrowser.getLocField().textProperty().removeListener(browserLocFieldChangeListener);
-        }
-        if (chromeLocFieldChangeListener != null) {
-            chromeLocField.textProperty().removeListener(chromeLocFieldChangeListener);
-        }
+    private void browserChanged(final UITab oldTab, final UITab newTab, final Stage stage, AnchorPane overlayLayer) {
 
-        // update the stage title to monitor the page displayed in the selected browser.
-        // todo hmm I wonder how the listeners ever get removed...
-        newBrowser.getView().getEngine().titleProperty().addListener((observableValue, oldTitle, newTitle) -> {
-            if (newTitle != null && !"".equals(newTitle)) {
-                stage.setTitle(getString("browser.name") + " - " + newTitle);
-            } else {
-                // necessary because when the browser is in the process of loading a new page, the title will be empty.  todo I wonder if the title would be reset correctly if the page has no title.
-                if (!newBrowser.getView().getEngine().getLoadWorker().isRunning()) {
-                    stage.setTitle(getString("browser.name") );
-                }
-            }
-        });
-
-        // monitor the status of the selected browser.
-        overlayLayer.getChildren().clear();
-        final StatusDisplay statusDisplay = new StatusDisplay(newBrowser.statusProperty());
-        //statusDisplay.translateXProperty().bind(getSidebarDisplay().widthProperty().add(20).add(getSidebarDisplay().translateXProperty()));
-        statusDisplay.translateYProperty().bind(overlayLayer.heightProperty().subtract(50));
-        overlayLayer.getChildren().add(statusDisplay);
-
-        // monitor the loading progress of the selected browser.
         
-        statusDisplay.setLoadControl(
-            new LoadingProgressDisplay(
-                newBrowser.getView().getEngine().getLoadWorker()
-            )
-        );
-
-        // make the chrome's location field respond to changes in the new browser's location.
-        browserLocFieldChangeListener = (observableValue, oldLoc, newLoc) -> {
-            if (!chromeLocField.getText().equals(newLoc)) {
-                chromeLocField.setText(newLoc);
+        if (oldTab instanceof BrowserTab) {
+            BrowserTab oldBrowserTab = (BrowserTab)oldTab;
+            BrowserWindow oldBrowser = oldBrowserTab.getBrowser();
+            // cleanup the links between the chrome's location field and the old browser's location field.
+            if (oldBrowser != null && browserLocFieldChangeListener != null) {
+                oldBrowser.getLocField().textProperty().removeListener(browserLocFieldChangeListener);
             }
-        };
-        newBrowser.getLocField().textProperty().addListener(browserLocFieldChangeListener);
-
-        // make the new browser respond to changes the user makes to the chrome's location.
-        chromeLocFieldChangeListener = (observableValue, oldLoc, newLoc) -> {
-            if (!newBrowser.getLocField().getText().equals(newLoc)) {
-                newBrowser.getLocField().setText(newLoc);
+            if (chromeLocFieldChangeListener != null) {
+                chromeLocField.textProperty().removeListener(chromeLocFieldChangeListener);
             }
-        };
-        chromeLocField.textProperty().addListener(chromeLocFieldChangeListener);
-        chromeLocField.setText(newBrowser.getLocField().getText());
-
-        // enable forward and backward buttons as appropriate.
-        Button forwardButton = (Button) mainLayout.lookup("#forwardButton");
-        if (forwardButton != null) {
-            forwardButton.disableProperty().unbind();
-            forwardButton.disableProperty().bind(newBrowser.getHistory().canNavForwardProperty().not());
-        }
-        Button backButton = (Button) mainLayout.lookup("#backButton");
-        if (forwardButton != null) {
-            backButton.disableProperty().unbind();
-            backButton.disableProperty().bind(newBrowser.getHistory().canNavBackwardProperty().not());
         }
 
-        // display the selected browser.
-        mainLayout.setCenter(newBrowser.getView());
+        
+        if (newTab instanceof BrowserTab) {
+            BrowserTab newBrowserTab = (BrowserTab)newTab;
+            BrowserWindow newBrowser = newBrowserTab.getBrowser();
+
+            // update the stage title to monitor the page displayed in the selected browser.
+            // todo hmm I wonder how the listeners ever get removed...
+            newBrowser.getView().getEngine().titleProperty().addListener((observableValue, oldTitle, newTitle) -> {
+                if (newTitle != null && !"".equals(newTitle)) {
+                    stage.setTitle(getString("browser.name") + " - " + newTitle);
+                } else {
+                    // necessary because when the browser is in the process of loading a new page, the title will be empty.  todo I wonder if the title would be reset correctly if the page has no title.
+                    if (!newBrowser.getView().getEngine().getLoadWorker().isRunning()) {
+                        stage.setTitle(getString("browser.name") );
+                    }
+                }
+            });
+
+            // monitor the status of the selected browser.
+            overlayLayer.getChildren().clear();
+
+            final StatusDisplay statusDisplay = new StatusDisplay(newBrowser.statusProperty());
+
+            //statusDisplay.translateXProperty().bind(getSidebarDisplay().widthProperty().add(20).add(getSidebarDisplay().translateXProperty()));
+            //statusDisplay.translateYProperty().bind(overlayLayer.heightProperty().subtract(50));
+            //overlayLayer.getChildren().add(statusDisplay);
+
+            // monitor the loading progress of the selected browser.
+
+            statusDisplay.setLoadControl(
+                new LoadingProgressDisplay(
+                    newBrowser.getView().getEngine().getLoadWorker()
+                )
+            );
+
+            // make the chrome's location field respond to changes in the new browser's location.
+            browserLocFieldChangeListener = (observableValue, oldLoc, newLoc) -> {
+                if (!chromeLocField.getText().equals(newLoc)) {
+                    chromeLocField.setText(newLoc);
+                }
+            };
+            newBrowser.getLocField().textProperty().addListener(browserLocFieldChangeListener);
+
+            // make the new browser respond to changes the user makes to the chrome's location.
+            chromeLocFieldChangeListener = (observableValue, oldLoc, newLoc) -> {
+                if (!newBrowser.getLocField().getText().equals(newLoc)) {
+                    newBrowser.getLocField().setText(newLoc);
+                }
+            };
+            chromeLocField.textProperty().addListener(chromeLocFieldChangeListener);
+            chromeLocField.setText(newBrowser.getLocField().getText());
+
+            // enable forward and backward buttons as appropriate.
+            Button forwardButton = (Button) mainLayout.lookup("#forwardButton");
+            if (forwardButton != null) {
+                forwardButton.disableProperty().unbind();
+                forwardButton.disableProperty().bind(newBrowser.getHistory().canNavForwardProperty().not());
+            }
+            Button backButton = (Button) mainLayout.lookup("#backButton");
+            if (forwardButton != null) {
+                backButton.disableProperty().unbind();
+                backButton.disableProperty().bind(newBrowser.getHistory().canNavBackwardProperty().not());
+            }
+
+            // display the selected browser.
+            mainLayout.setCenter(newBrowser.getView());
+            mainLayout.setBottom(statusDisplay);
+        }
+        else if (newTab instanceof UITab) {
+            mainLayout.setCenter(newTab.content());            
+        }
     }
 
-    public BrowserWindow getBrowser() {
+    public UITab getBrowser() {
         return tabManager.getBrowser();
     }
 
@@ -359,6 +405,24 @@ public class WebBrowser extends Application {
 
     public static void main(String[] args) {
         Application.launch(args);
+    }
+
+    private void go(String url) {
+        if (url.startsWith("about:")) {
+            UITab u = new UITab(core, new Label("test"));
+            getTabManager().addTab(u);
+        }
+        else { 
+            if (getBrowser() instanceof BrowserTab)
+                ((BrowserTab)getBrowser()).getBrowser().go(url);
+            else {
+                //create a new tab because we were in a  UITab (not BrowserTab)
+                BrowserTab bt = new BrowserTab(core, tabManager);
+                getTabManager().addTab(bt);
+                bt.getBrowser().go(url);
+            }
+                
+        }
     }
 
 }

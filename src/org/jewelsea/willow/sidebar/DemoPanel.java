@@ -26,7 +26,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.VBox;
-import org.jewelsea.willow.Willow;
+import jnetention.run.WebBrowser;
 import org.jewelsea.willow.navigation.BookmarkHandler;
 import org.jewelsea.willow.widgets.IconButton;
 
@@ -46,7 +46,7 @@ public class DemoPanel extends TitledPane {
 //    "http://mugtug.com/sketchpad/",                 sketchpad gives ES2 Vram Pool errors, so disabled it.
     };
 
-    public DemoPanel(final Willow chrome) {
+    public DemoPanel(final WebBrowser chrome) {
         // create a canvas demos button.
         final Button canvasButton = new IconButton(
                 getString("demo-panel.canvas-demos"),

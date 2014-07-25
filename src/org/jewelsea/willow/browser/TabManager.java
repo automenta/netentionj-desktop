@@ -28,8 +28,8 @@ import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.ImageView;
+import jnetention.Core;
 import org.jewelsea.willow.util.ResourceUtil;
-
 import static org.jewelsea.willow.util.ResourceUtil.getString;
 
 /**
@@ -42,7 +42,7 @@ public class TabManager {
     /**
      * representation of the current browser.
      */
-    final private ReadOnlyObjectWrapper<BrowserWindow> browser = new ReadOnlyObjectWrapper<>();
+    final private ReadOnlyObjectWrapper<UITab> currentBrowser = new ReadOnlyObjectWrapper<>();
 
     /**
      * browser tabs.
@@ -60,10 +60,10 @@ public class TabManager {
      */
     final private TextField chromeLocField;
 
-    public TabManager(TextField locField) {
+    public TabManager(Core c, TextField locField) {
         this.chromeLocField = locField;
 
-        // create a browser tab pane with a custom tab closing policy which does not allow the last tab to be closed.
+        // create a browser tab pane with a custom tab closing policy which does not allow the last tab to be closed.        
         tabPane.setTabMinWidth(50);
         tabPane.setTabMaxWidth(TAB_PANE_WIDTH);
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
@@ -80,35 +80,50 @@ public class TabManager {
         });
 
         // monitor the selected tab in the tab pane so that we can set the TabManager's browser property appropriately.
+        
         tabPane.getSelectionModel().selectedItemProperty().addListener((observableValue, oldTab, newTab) ->
-                browser.set(((BrowserTab) newTab).getBrowser())
+                //if (newTab instanceof BrowserTab) {
+                    currentBrowser.set((UITab)newTab)
+                /*}
+                else {
+                    
+                }*/
+                
         );
 
-        // add the initialTab to the tabset.
-        addTab(new BrowserTab(this));
+
 
         // create a button for opening a new tab.
         newTabButton.setTooltip(new Tooltip(getString("nav-toolbar.createtab.tooltip")));
         final ImageView tabGraphic = new ImageView(ResourceUtil.getImage("Plus.png"));
+        newTabButton.setGraphic(tabGraphic);
+        newTabButton.onActionProperty().set(actionEvent -> {
+            final BrowserTab newTab = new BrowserTab(c, this);
+            newTab.setText(getString("newtab.title"));
+            addTab(newTab);
+        });       
+        
         final ColorAdjust tabColorAdjust = new ColorAdjust();
         tabColorAdjust.setContrast(-0.7);
         tabGraphic.setEffect(tabColorAdjust);
         tabGraphic.setPreserveRatio(true);
         tabGraphic.setFitHeight(14);
-        newTabButton.setGraphic(tabGraphic);
-        newTabButton.onActionProperty().set(actionEvent -> {
-            final BrowserTab newTab = new BrowserTab(this);
-            newTab.setText(getString("newtab.title"));
-            addTab(newTab);
-        });
+        
+        //System.out.println("adding initial tab" + (System.currentTimeMillis() - WebBrowser.start)/1000.0);                
+        // add the initialTab to the tabset.
+        addTab(new BrowserTab(c, this));
+        
+
+        //System.out.println("TabManager finish" + (System.currentTimeMillis() - WebBrowser.start)/1000.0);        
+        
     }
 
-    public BrowserWindow getBrowser() {
-        return browser.get();
+    public UITab getBrowser() {
+        return currentBrowser.get();
     }
 
-    public ReadOnlyObjectProperty<BrowserWindow> browserProperty() {
-        return browser.getReadOnlyProperty();
+    public ReadOnlyObjectProperty<UITab> browserProperty() {
+        return currentBrowser.getReadOnlyProperty();
     }
 
     /**
@@ -139,5 +154,9 @@ public class TabManager {
             chromeLocField.requestFocus();
         }
     }
+    public void addTab(Tab tab) {
+        tabPane.getTabs().add(tab);
+        tabPane.getSelectionModel().selectLast();
+    }    
 
 }

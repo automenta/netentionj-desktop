@@ -30,7 +30,7 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import org.jewelsea.willow.Willow;
+import jnetention.run.WebBrowser;
 import org.jewelsea.willow.navigation.BookmarkHandler;
 import org.jewelsea.willow.util.ResourceUtil;
 import org.jewelsea.willow.widgets.IconButton;
@@ -52,13 +52,13 @@ public class NavigationPanel extends TitledPane {
             { "JavaFX StackOverflow", "http://stackoverflow.com/questions/tagged/javafx+javafx-2" }
     };
 
-    public NavigationPanel(final Willow chrome) {
+    public NavigationPanel(final WebBrowser chrome) {
         // create a home button to navigate home.
         final Button homeButton = new IconButton(
                 getString("nav-toolbar.home"),
                 "Fairytale_folder_home.png",
                 getString("nav-toolbar.home.tooltip"),
-                actionEvent -> chrome.getBrowser().navTo(chrome.homeLocationProperty.get())
+                actionEvent -> chrome.getBrowser().go(chrome.homeLocationProperty.get())
         );
         homeButton.setOnDragOver(event -> {
             Dragboard db = event.getDragboard();

@@ -23,7 +23,8 @@ package org.jewelsea.willow.navigation;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
-import org.jewelsea.willow.Willow;
+import jnetention.run.WebBrowser;
+
 
 /** Creates a named bookmarked url to navigate to. */
 public class BookmarkHandler {
@@ -37,7 +38,7 @@ public class BookmarkHandler {
      * @return true if the bookmark was not already installed in the chrome, otherwise false.
      */
     public static boolean installBookmark(
-            final Willow chrome,
+            final WebBrowser chrome,
             final ContextMenu bookmarksMenu,
             final String bookmarkName,
             final String bookmarkUrl
@@ -49,7 +50,7 @@ public class BookmarkHandler {
         }
 
         final MenuItem menuItem = new MenuItem(bookmarkName);
-        menuItem.setOnAction(actionEvent -> chrome.getBrowser().navTo(bookmarkUrl));
+        menuItem.setOnAction(actionEvent -> chrome.getBrowser().go(bookmarkUrl));
         bookmarksMenu.getItems().add(menuItem);
 
         return true;

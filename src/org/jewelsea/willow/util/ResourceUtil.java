@@ -31,6 +31,8 @@ import java.awt.image.RenderedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -72,18 +74,24 @@ public class ResourceUtil {
     /**
      * Get a resource relative to the application class.
      */
-    static String getResource(String path) {
+    static File  getResource(String path) {
         
         //System.out.println( ResourceUtil.class.getResource("../../../../../") );;
         //return ClassLoader.getSystemResource("../resources/org/jewelsea/willow/" + path).toExternalForm();
-        return "file://resources/org/jewelsea/willow/" + path;
+        return new File("resources/org/jewelsea/willow/" + path);
     }
 
     /**
      * Get a image resource in an images/ path relative to the application class.
      */
     public static Image getImage(String imageFilename) {
-        return new Image(ResourceUtil.getResource("images/" + imageFilename));
+        File i = ResourceUtil.getResource("images/" + imageFilename);
+        try {
+            return new Image(new FileInputStream(i));
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(ResourceUtil.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
 
     /**

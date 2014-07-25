@@ -200,7 +200,7 @@ public class History {
         final MenuItem nextMenuItem = new MenuItem(loc);
 
         nextMenuItem.setOnAction(
-                actionEvent -> browser.navTo(requestNav(navPointer))
+                actionEvent -> browser.go(requestNav(navPointer))
         );
 
         return nextMenuItem;

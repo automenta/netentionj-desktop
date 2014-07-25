@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import nars.core.DefaultNARBuilder;
 import nars.core.NAR;
 import nars.io.TextInput;
 import nars.io.TextOutput;
@@ -39,6 +40,7 @@ import net.tomp2p.peers.PeerMapChangeListener;
 import net.tomp2p.peers.PeerStatatistic;
 import net.tomp2p.peers.PeerStatusListener;
 import net.tomp2p.storage.Data;
+import org.apache.commons.math3.stat.Frequency;
 import org.mapdb.BTreeMap;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -87,8 +89,14 @@ public class Core extends EventEmitter {
     }
     
     public Core(DB db) {
-        logic = new NAR();
-        new TextOutput(logic, System.out);
+        logic = new DefaultNARBuilder().
+                setConceptBagLevels(400).
+                setTaskLinkBagLevels(16).
+                setTermLinkBagLevels(16).
+                setConceptBagSize(4096).build();
+        
+        
+        new TextOutput(logic, System.out).setErrors(true);
         
         
         this.db = db;
@@ -471,12 +479,17 @@ public class Core extends EventEmitter {
 
     public void knowSimilar(String a, String b, double freq, double conf) {
         String s = "<" + n(a) + " <-> " + n(b) + ">. %" + freq + ";" + conf + "%";
-        new TextInput(logic, s);
+        logic.addInput(s);
         think();
     }
     public void knowProduct(String a, String b, String clas, double freq, double conf, double priority) {
         String s = "$" + priority + "$ <(*," + n(a) + "," + n(b) + ") --> " + clas + ">. %" + freq + ";" + conf + "%";
-        new TextInput(logic, s);
+        logic.addInput(s);
+        think();        
+    }
+    public void knowInherit(String a, String b, double freq, double conf, double priority) {
+        String s = "$" + priority + "$ <" + n(a) + " --> " + n(b) + ">. %" + freq + ";" + conf + "%";
+        logic.addInput(s);
         think();        
     }
     
@@ -484,9 +497,40 @@ public class Core extends EventEmitter {
         logic.step(1);
     }
 
-    public static String n(String s) {
-        if (s.indexOf('%')==-1) return s;
-        return s.replaceAll("%", "__P");        
+    public static Frequency tokenBag(String x, int minLength, int maxTokenLength) {
+        String[] tokens = tokenize(x);
+        Frequency f = new Frequency();
+        for (String t : tokens) {
+            if (t==null) continue;
+            if (t.length() < minLength) continue;
+            if (t.length() > maxTokenLength) continue;
+            t = t.toLowerCase();
+            f.addValue(t);            
+        }
+        return f;
+    }
+
+    public static String[] tokenize(String value) {
+            String v = value.replaceAll(","," \uFFEB ").
+                        replaceAll("\\."," \uFFED").
+                        replaceAll("\\!"," \uFFED").  //TODO alternate char
+                        replaceAll("\\?"," \uFFED")   //TODO alternate char
+                    ;
+            return v.split(" ");
+        }    
+    
+    public static String n(String s) {        
+        return s.replaceAll(":", "\u25B8")
+                .replaceAll(" ", "\u2581")
+                .replaceAll("%", "\u25B9") //TODO find a different unicode char
+                .replaceAll("#", "\u25BA") //TODO find a different unicode char
+                .replaceAll("&", "\u25BB") //TODO find a different unicode char
+                .replaceAll("/", "\u25BC") //TODO find a different unicode char
+                .replaceAll("=", "\u25BD") //TODO find a different unicode char
+                .replaceAll(";", "\u25BE") //TODO find a different unicode char
+                .replaceAll("-", "\u25BF") //TODO find a different unicode char                
+                .replaceAll("\\.", "\uFFED") //TODO find a different unicode char
+                ;
     }
 
     public Object getTag(String tagID) {

@@ -41,7 +41,6 @@ import org.jewelsea.willow.dialogs.DialogFactory;
 import org.jewelsea.willow.helpers.FavIconHandler;
 import org.jewelsea.willow.helpers.LocationHandler;
 import org.jewelsea.willow.navigation.History;
-import org.jewelsea.willow.navigation.NavigationHandler;
 
 import static org.jewelsea.willow.util.ResourceUtil.getString;
 import static org.jewelsea.willow.util.ResourceUtil.copyImageView;
@@ -50,25 +49,28 @@ import static org.jewelsea.willow.util.ResourceUtil.copyImageView;
  * A single web browser window to be displayed in a tab.
  */
 public class BrowserWindow {
-    private final WebView view = new WebView();
+    private final WebView view;
     private final History history = new History(this);
     private final ReadOnlyStringWrapper status = new ReadOnlyStringWrapper();
     private final ReadOnlyObjectWrapper<ImageView> favicon = new ReadOnlyObjectWrapper<>();
     private final FavIconHandler favIconHandler = FavIconHandler.getInstance();
-    private final DialogFactory dialogFactory = new DialogFactory(view);
-    private final NavigationHandler navHandler = new NavigationHandler(view);
+    private final DialogFactory dialogFactory ;
 
     /** the location the browser engine is currently pointing at (or where the user can type in where to go next). */
     private final TextField locField = new TextField();
 
-    public BrowserWindow() {
+    public BrowserWindow(WebView view) {
+        this.view = view;
+        
+        dialogFactory = new DialogFactory(view);
+        
         // init the location text field.
         HBox.setHgrow(locField, Priority.ALWAYS);
         locField.setPromptText(getString("location.prompt"));
         locField.setTooltip(new Tooltip(getString("location.tooltip")));
         locField.setOnKeyReleased(keyEvent -> {
             if (keyEvent.getCode().equals(KeyCode.ENTER)) {
-                navHandler.navTo(locField.getText());
+                go(locField.getText());
             }
         });
         locField.focusedProperty().addListener((observableValue4, from, to) -> {
@@ -157,9 +159,44 @@ public class BrowserWindow {
         return view;
     }
 
-    public void navTo(String loc) {
-        navHandler.navTo(loc);
+    public void go(String loc) {
+        // modify the request location, to make it easier on the user for typing.
+        if (loc == null) loc = "";
+        if (loc.startsWith("google")) { // search google
+            loc = "http://www.google.com/search?q=" + loc.substring("google".length()).trim().replaceAll(" ", "+");
+        } else if (loc.startsWith("bing")) { // search bing
+            loc = "http://www.bing.com/search?q=" + loc.substring("bing".length()).trim().replaceAll(" ", "+");
+        } else if (loc.startsWith("yahoo")) { // search yahoo
+            loc = "http://search.yahoo.com/search?p=" + loc.substring("yahoo".length()).trim().replaceAll(" ", "+");
+        } else if (loc.startsWith("wiki")) {
+            loc = "http://en.wikipedia.org/w/index.php?search=" + loc.substring("wiki".length()).trim().replaceAll(" ", "+");
+        } else if (loc.startsWith("find")) { // search default (google) due to keyword
+            loc = "http://www.google.com/search?q=" + loc.substring("find".length()).trim().replaceAll(" ", "+");
+        } else if (loc.startsWith("search")) { // search default (google) due to keyword
+            loc = "http://www.google.com/search?q=" + loc.substring("search".length()).trim().replaceAll(" ", "+");
+        } else if (loc.contains(" ")) { // search default (google) due to space
+            loc = "http://www.google.com/search?q=" + loc.trim().replaceAll(" ", "+");
+        } else if (!(loc.startsWith("http://") || loc.startsWith("https://")) && !loc.isEmpty()) {
+            loc = "http://" + loc;  // default to http
+        }
+
+        // ask the webview to navigate to the given location.
+        if (!loc.equals(view.getEngine().getLocation())) {
+            if (!loc.isEmpty()) {
+                view.getEngine().load(loc);
+            } else {
+                view.getEngine().loadContent("");
+            }
+        } else {
+            view.getEngine().reload();
+        }
+
+        // webview will grab the focus if automatically if it has an html input control to display, but we want it
+        // to always grab the focus and kill the focus which was on the input bar, so just set ask the platform to focus
+        // the web view later (we do it later, because if we did it now, the default focus handling might kick in and override our request).
+        Platform.runLater(view::requestFocus);
     }
+
 }
 
 // todo cleanup the javascript prompt handlers as their code could be collapsed.

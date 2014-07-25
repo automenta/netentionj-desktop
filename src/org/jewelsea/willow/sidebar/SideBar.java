@@ -27,7 +27,7 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import org.jewelsea.willow.Willow;
+import jnetention.run.WebBrowser;
 
 public class SideBar {
     private final ScrollPane sideBarScroll;
@@ -51,7 +51,7 @@ public class SideBar {
      * @param chrome the chrome the sidebar will be placed into.
      * @return the new sidebar.
      */
-    public static SideBar createSidebar(final Willow chrome) {
+    public static SideBar createSidebar(final WebBrowser chrome) {
         // layout holder for the sidebar.
         final VBox bar = new VBox();
         bar.getStyleClass().add("sidebar-background");

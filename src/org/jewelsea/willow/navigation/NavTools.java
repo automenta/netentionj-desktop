@@ -23,7 +23,6 @@ package org.jewelsea.willow.navigation;
 
 import javafx.application.Platform;
 import javafx.geometry.Pos;
-import javafx.geometry.Side;
 import javafx.scene.control.Button;
 import javafx.scene.control.Tooltip;
 import javafx.scene.effect.ColorAdjust;
@@ -36,27 +35,31 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import jnetention.run.WebBrowser;
 import org.jewelsea.willow.util.ResourceUtil;
-import org.jewelsea.willow.util.SlideAnimator;
 
 import static org.jewelsea.willow.util.ResourceUtil.getString;
 
 public class NavTools {
+    final static int buttonHeight = 20;
+
     public static Pane createNavPane(final WebBrowser chrome) {
         // create a back button.
         final Button backButton = new Button();
         backButton.setId("backButton"); // todo I don't like this id set just for lookup - reference would be better
         backButton.setTooltip(new Tooltip(getString("nav-toolbar.back.tooltip")));
         final ImageView backGraphic = new ImageView(ResourceUtil.getImage("239706184.png"));
+        
+        
         final ColorAdjust backColorAdjust = new ColorAdjust();
         backColorAdjust.setBrightness(-0.1);
         backColorAdjust.setContrast(-0.1);
         backGraphic.setEffect(backColorAdjust);
+        
         backButton.setGraphic(backGraphic);
         backGraphic.setPreserveRatio(true);
-        backGraphic.setFitHeight(32);
+        backGraphic.setFitHeight(buttonHeight);
         backButton.onActionProperty().set(actionEvent -> {
             if (chrome.getBrowser().getHistory().canNavBack()) {
-                chrome.getBrowser().navTo(chrome.getBrowser().getHistory().requestNavBack());
+                chrome.getBrowser().go(chrome.getBrowser().getHistory().requestNavBack());
             }
         });
         backButton.setOnMouseReleased(mouseEvent -> {
@@ -75,18 +78,20 @@ public class NavTools {
         forwardColorAdjust.setContrast(-0.1);
         forwardGraphic.setEffect(forwardColorAdjust);
         forwardGraphic.setPreserveRatio(true);
-        forwardGraphic.setFitHeight(20);
+        forwardGraphic.setFitHeight(buttonHeight);
         forwardButton.setGraphic(forwardGraphic);
         forwardButton.setTooltip(new Tooltip(getString("nav-toolbar.forward.tooltip")));
         forwardButton.onActionProperty().set(actionEvent -> {
-            if (chrome.getBrowser().getHistory().canNavForward()) {
-                chrome.getBrowser().navTo(chrome.getBrowser().getHistory().requestNavForward());
-            }
+            if (chrome.getBrowser().getHistory()!=null) 
+                if (chrome.getBrowser().getHistory().canNavForward()) {
+                    chrome.getBrowser().go(chrome.getBrowser().getHistory().requestNavForward());
+                }
         });
         forwardButton.setOnMouseReleased(mouseEvent -> {
-            if (mouseEvent.getButton().equals(MouseButton.SECONDARY)) {
-                chrome.getBrowser().getHistory().showMenu(backButton);
-            }
+            if (chrome.getBrowser().getHistory()!=null)
+                if (mouseEvent.getButton().equals(MouseButton.SECONDARY)) {
+                    chrome.getBrowser().getHistory().showMenu(backButton);
+                }
         });
 
         // create a navigate button.
@@ -100,7 +105,7 @@ public class NavTools {
         navGraphic.setFitHeight(14);
         navButton.setGraphic(navGraphic);
         navButton.onActionProperty().set(actionEvent ->
-                chrome.getBrowser().navTo(chrome.getBrowser().getLocField().getText())
+                chrome.getBrowser().go(chrome.getBrowser().getLocation())
         );
 
         // create a button to hide and show the sidebar.

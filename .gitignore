@@ -1,4 +1,7 @@
 build/
 dist/
 nbproject/private
+database
+database.p
+database**
 
