@@ -98,6 +98,8 @@ public class FavIconHandler {
     public ImageView fetchFavIcon(final String browserLoc) {
         // fetch the favicon from cache if it is there.
         final String serverRoot = findRootLoc(browserLoc);
+        
+        
         ImageView cachedFavicon = faviconCache.get(serverRoot);
         if (cachedFavicon != null) return cachedFavicon;
 
@@ -156,7 +158,7 @@ public class FavIconHandler {
             return (pathSepLoc > 0) ? browserLoc.substring(0, pathSepLoc) : browserLoc;
         }
 
-        return null;
+        return "about:";
     }
 }
 

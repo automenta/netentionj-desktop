@@ -3,8 +3,8 @@ package jnetention.run;
 import jnetention.Core;
 import static javafx.application.Application.launch;
 import javafx.stage.Stage;
-import jnetention.gui.javafx.NetentionJFX;
-import jnetention.gui.javafx.NodeControlPane;
+import jnetention.gui.NetentionJFX;
+import jnetention.gui.NodeControlPane;
 
 /**
  * Runs in-memory only (no disk saving)

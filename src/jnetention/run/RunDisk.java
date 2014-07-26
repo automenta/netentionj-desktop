@@ -2,7 +2,7 @@ package jnetention.run;
 
 import jnetention.Core;
 import static javafx.application.Application.launch;
-import jnetention.gui.javafx.NetentionJFX;
+import jnetention.gui.NetentionJFX;
 
 /**
  * Runs in-memory only (no disk saving)

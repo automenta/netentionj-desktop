@@ -1,4 +1,4 @@
-package jnetention.gui.javafx;
+package jnetention.gui;
 
 import com.google.common.collect.HashMultiset;
 import java.io.IOException;

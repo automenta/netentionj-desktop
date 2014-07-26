@@ -46,17 +46,16 @@ public class NavTools {
         final Button backButton = new Button();
         backButton.setId("backButton"); // todo I don't like this id set just for lookup - reference would be better
         backButton.setTooltip(new Tooltip(getString("nav-toolbar.back.tooltip")));
+                        
+        
         final ImageView backGraphic = new ImageView(ResourceUtil.getImage("239706184.png"));
-        
-        
         final ColorAdjust backColorAdjust = new ColorAdjust();
         backColorAdjust.setBrightness(-0.1);
         backColorAdjust.setContrast(-0.1);
-        backGraphic.setEffect(backColorAdjust);
-        
+        backGraphic.setEffect(backColorAdjust);                
         backButton.setGraphic(backGraphic);
         backGraphic.setPreserveRatio(true);
-        backGraphic.setFitHeight(buttonHeight);
+        backGraphic.setFitHeight(buttonHeight);        
         backButton.onActionProperty().set(actionEvent -> {
             if (chrome.getBrowser().getHistory().canNavBack()) {
                 chrome.getBrowser().go(chrome.getBrowser().getHistory().requestNavBack());
@@ -158,9 +157,9 @@ public class NavTools {
         navPane.setFillHeight(false);
         Platform.runLater(() -> navPane.setMinHeight(navPane.getHeight()));
 
-        final InnerShadow innerShadow = new InnerShadow();
+        /*final InnerShadow innerShadow = new InnerShadow();
         innerShadow.setColor(Color.ANTIQUEWHITE);
-        navPane.setEffect(innerShadow);
+        navPane.setEffect(innerShadow);*/
 
         return navPane;
     }

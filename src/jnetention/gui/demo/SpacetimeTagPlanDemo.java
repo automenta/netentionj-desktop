@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package jnetention.gui.javafx.demo;
+package jnetention.gui.demo;
 
 import java.util.ArrayList;
 import java.util.List;

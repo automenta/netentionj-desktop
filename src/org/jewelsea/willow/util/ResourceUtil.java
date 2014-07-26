@@ -51,10 +51,10 @@ public class ResourceUtil {
     static ResourceBundle resources;
     static {
         try {
-            File file = new File("./resources");
+            File file = new File("./src/resources");
             URL[] urls = {file.toURI().toURL()};
             ClassLoader loader = new URLClassLoader(urls);
-            resources = ResourceBundle.getBundle("org.jewelsea.willow.text", Locale.getDefault(), loader);
+            resources = ResourceBundle.getBundle("browser", Locale.getDefault(), loader);
         } catch (MalformedURLException ex) {
             Logger.getLogger(ResourceUtil.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -78,14 +78,14 @@ public class ResourceUtil {
         
         //System.out.println( ResourceUtil.class.getResource("../../../../../") );;
         //return ClassLoader.getSystemResource("../resources/org/jewelsea/willow/" + path).toExternalForm();
-        return new File("resources/org/jewelsea/willow/" + path);
+        return new File("./src/resources/" + path);
     }
 
     /**
      * Get a image resource in an images/ path relative to the application class.
      */
     public static Image getImage(String imageFilename) {
-        File i = ResourceUtil.getResource("images/" + imageFilename);
+        File i = ResourceUtil.getResource("icon/" + imageFilename);
         try {
             return new Image(new FileInputStream(i));
         } catch (FileNotFoundException ex) {

@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package jnetention.gui.javafx;
+package jnetention.gui;
 
 import com.google.common.base.Function;
 import static com.google.common.collect.Iterables.*;
@@ -23,7 +23,7 @@ import jnetention.Core.SaveEvent;
 import jnetention.EventEmitter.Observer;
 import jnetention.NObject;
 import jnetention.NTag;
-import jnetention.gui.javafx.TaggerPane.TagReceiver;
+import jnetention.gui.TaggerPane.TagReceiver;
 
 
 /**
@@ -52,8 +52,11 @@ public class IndexTreePane extends BorderPane implements Observer {
         tv.setOnMouseClicked(new EventHandler<MouseEvent>(){
             @Override public void handle(MouseEvent mouseEvent)    {            
                 if(mouseEvent.getClickCount() == 2) {
-                    NObject item = tv.getSelectionModel().getSelectedItem().getValue();
-                    onDoubleClick(item);
+                    TreeItem<NObject> selected = tv.getSelectionModel().getSelectedItem();
+                    if (selected!=null) {
+                        NObject item = selected.getValue();
+                        onDoubleClick(item);
+                    }
                 }
             }
         });

@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package jnetention.gui.javafx;
+package jnetention.gui;
 
 import com.sun.javafx.scene.web.skin.HTMLEditorSkin;
 import com.sun.webkit.WebPage;
@@ -30,7 +30,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import jnetention.Core;
 import jnetention.NObject;
 import jnetention.Scope;
-import jnetention.gui.javafx.TaggerPane.TagReceiver;
+import jnetention.gui.TaggerPane.TagReceiver;
 import org.w3c.dom.Document;
 import org.w3c.dom.Text;
 

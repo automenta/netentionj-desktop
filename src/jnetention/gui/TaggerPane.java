@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package jnetention.gui.javafx;
+package jnetention.gui;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -13,7 +13,7 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import jnetention.Core;
-import jnetention.gui.javafx.TaggerPane.TagReceiver;
+import jnetention.gui.TaggerPane.TagReceiver;
 
 /**
  *

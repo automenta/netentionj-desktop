@@ -1,6 +1,6 @@
 
 import java.util.List;
-import jnetention.gui.javafx.demo.SpacetimeTagPlanDemo;
+import jnetention.gui.demo.SpacetimeTagPlanDemo;
 import jnetention.possibility.SpacetimeTagPlan;
 import jnetention.possibility.SpacetimeTagPlan.PlanResult;
 import jnetention.possibility.SpacetimeTagPlan.Possibility;

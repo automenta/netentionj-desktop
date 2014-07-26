@@ -23,6 +23,8 @@ package jnetention.run;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.util.HashMap;
+import java.util.Map;
 import javafx.animation.Animation;
 import javafx.animation.Transition;
 import javafx.application.Application;
@@ -32,12 +34,14 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.embed.swing.SwingNode;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.ClipboardContent;
@@ -45,10 +49,16 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.*;
+import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import javax.swing.JComponent;
 import jnetention.Core;
-import jnetention.gui.javafx.NodeControlPane;
+import jnetention.gui.IndexTreePane;
+import jnetention.gui.NodeControlPane;
+import nars.gui.NARControls;
+import nars.gui.output.MemoryView;
+import nars.io.TextOutput;
 import org.jewelsea.willow.browser.BrowserTab;
 import org.jewelsea.willow.browser.BrowserWindow;
 import org.jewelsea.willow.browser.LoadingProgressDisplay;
@@ -65,16 +75,49 @@ public class WebBrowser extends Application {
     static {        
         System.out.println("Static start " + (System.currentTimeMillis() - start)/1000.0);
     }
+    private AnchorPane overlayLayer;
+    private BorderPane underlayLayer;
     
+    public static abstract class Route {
+        public final String url;
+        public final String name;
+
+        public Route(String url, String name) {
+            this.url = url;
+            this.name = name;
+        }
+        
+        abstract public Object handle(Map<String,String> parameters);
+    }
+    
+    public static class Router {
+        public final Map<String, Route> routes = new HashMap();
+        
+        public void add(Route r) {
+            routes.put(r.url, r);
+        }
+
+        public Route get(String url) {
+            for (String s : routes.keySet()) {
+                if (s.equals(url))
+                    return routes.get(s);
+            }
+            return null;
+        }
+    }
+    
+    public final Router router = new Router();
+
     
     public static final String APPLICATION_ICON =
             "WillowTreeIcon.png";
     
     public static final String DEFAULT_HOME_LOCATION =
-            "http://news.google.com";
+            "about:";
     
     public static final String STYLESHEET =
-            "org/jewelsea/willow/willow.css";
+            "/resources/browser.black.css";
+    
     public StringProperty homeLocationProperty = new SimpleStringProperty(DEFAULT_HOME_LOCATION);
     private static final double INITIAL_SCENE_HEIGHT = 600;
     private static final double INITIAL_SCENE_WIDTH = 1121;
@@ -90,7 +133,9 @@ public class WebBrowser extends Application {
 
     @Override
     public void start(final Stage stage) throws MalformedURLException, UnsupportedEncodingException {
-        System.out.println("WebBrowser.start()" + (System.currentTimeMillis() - start)/1000.0);        
+        System.out.println("WebBrowser.start()" + (System.currentTimeMillis() - start)/1000.0);
+        
+        initRoutes();
         
         // set the title bar to the title of the web page (if there is one).
         stage.setTitle(getString("browser.name"));
@@ -108,7 +153,6 @@ public class WebBrowser extends Application {
         System.out.println("created sidebar" + (System.currentTimeMillis() - start)/1000.0);        
 
         // initialize the location field in the Chrome.
-        chromeLocField.setStyle("-fx-font-size: 14;");
         chromeLocField.setPromptText(getString("location.prompt"));
         chromeLocField.setTooltip(new Tooltip(getString("location.tooltip")));
         chromeLocField.setOnKeyReleased(keyEvent -> {
@@ -124,11 +168,22 @@ public class WebBrowser extends Application {
 
         System.out.println("navpane added " + (System.currentTimeMillis() - start)/1000.0);
 
+        
+                
+
         // add an overlay layer over the main layout for effects and status messages.
-        final AnchorPane overlayLayer = new AnchorPane();
-        final StackPane overlaidLayout = new StackPane();
-        overlaidLayout.getChildren().addAll(mainLayout, overlayLayer);
+        overlayLayer = new AnchorPane();
+        underlayLayer = new BorderPane();
+        final StackPane overlaidLayout = new StackPane();        
+        overlaidLayout.getChildren().addAll(underlayLayer, mainLayout, overlayLayer);
         overlayLayer.setPickOnBounds(false);
+        
+        underlayLayer.setPrefWidth(Double.MAX_VALUE);
+        underlayLayer.setPrefHeight(Double.MAX_VALUE);
+        underlayLayer.setFocusTraversable(false);
+
+        
+        
 
         // monitor the tab manager for a change in the browser window and update the display appropriately.
         tabManager.browserProperty().addListener((observableValue, oldBrowser, newBrowser) ->
@@ -151,15 +206,19 @@ public class WebBrowser extends Application {
         overlayLayer.prefHeightProperty().bind(scene.heightProperty());
         overlayLayer.prefWidthProperty().bind(scene.widthProperty());
 
-        System.out.println("scene created " + (System.currentTimeMillis() - start)/1000.0);        
+
+
+        addOverlayLog();
         
         ScrollPane sidebarScroll = new ScrollPane(sidebar);
         sidebarScroll.setFitToHeight(true);
         sidebarScroll.setFitToWidth(true);
         sidebarScroll.setMinWidth(250);
-        mainLayout.setLeft(sidebarScroll);
+        sidebarScroll.setMaxWidth(250);
+        //mainLayout.setLeft(sidebarScroll);
+        
 
-        System.out.println("sidebar added " + (System.currentTimeMillis() - start)/1000.0);        
+        //System.out.println("sidebar added " + (System.currentTimeMillis() - start)/1000.0);        
 
         // highlight the entire text if we click on the chromeLocField so that it can be easily changed.
         chromeLocField.focusedProperty().addListener((observableValue, from, to) -> {
@@ -215,7 +274,7 @@ public class WebBrowser extends Application {
         go(homeLocationProperty.get());
         
         // we need to manually handle the change from no browser at all to an initial browser.
-        browserChanged(null, getBrowser(), stage, overlayLayer);
+        //browserChanged(null, getBrowser(), stage, overlayLayer);
 
         System.out.println("WebBrowser.start() finished " + (System.currentTimeMillis() - start)/1000.0);        
     
@@ -329,7 +388,7 @@ public class WebBrowser extends Application {
             });
 
             // monitor the status of the selected browser.
-            overlayLayer.getChildren().clear();
+            //overlayLayer.getChildren().clear();
 
             final StatusDisplay statusDisplay = new StatusDisplay(newBrowser.statusProperty());
 
@@ -407,22 +466,101 @@ public class WebBrowser extends Application {
         Application.launch(args);
     }
 
+    
+    /** URL router */
     private void go(String url) {
-        if (url.startsWith("about:")) {
-            UITab u = new UITab(core, new Label("test"));
-            getTabManager().addTab(u);
-        }
-        else { 
-            if (getBrowser() instanceof BrowserTab)
-                ((BrowserTab)getBrowser()).getBrowser().go(url);
-            else {
-                //create a new tab because we were in a  UITab (not BrowserTab)
-                BrowserTab bt = new BrowserTab(core, tabManager);
-                getTabManager().addTab(bt);
-                bt.getBrowser().go(url);
+        Route rr = router.get(url);
+        if (rr!=null) {
+            Object r = rr.handle(new HashMap());
+            if (r!=null) {
+                Node c;
+                if (r instanceof String) {
+                    //html 
+                    c = new WebView();
+                    ((WebView)c).getEngine().loadContent((String)r);
+                }
+                else if (r instanceof Node) {
+                    //javafx component
+                    c = (Node)r;
+                }
+                else if (r instanceof JComponent) {
+                    //swing 
+                    c = new SwingNode();
+                    ((SwingNode)c).setContent((JComponent)r);
+                }
+                else {
+                    c = new Label(r.toString());
+                }
+
+                UITab u = new UITab(core, c);
+                u.setText(rr.name);
+                getTabManager().addTab(u);
+                return;
             }
-                
         }
+        
+        
+        //Load URL in BrowserTab
+        if (getBrowser() instanceof BrowserTab)
+            ((BrowserTab)getBrowser()).getBrowser().go(url);
+        else {
+            //create a new tab because we were in a  UITab (not BrowserTab)
+            BrowserTab bt = new BrowserTab(core, tabManager);
+            getTabManager().addTab(bt);
+            bt.getBrowser().go(url);
+        }
+    }
+
+    
+    protected void initRoutes() {
+        router.add(new Route("about:ontology", "Ontology") {
+            @Override public Object handle(Map<String, String> parameters) {
+                return new IndexTreePane(core, null);
+            }            
+        });
+
+        router.add(new Route("about:", "System") {
+            @Override public Object handle(Map<String, String> parameters) {
+                String html = "";
+                html += router.routes.toString();
+                return html;
+            }            
+        });
+        
+        router.add(new Route("about:logic/memory", "Logic Memory") {
+            @Override public Object handle(Map<String, String> parameters) {
+                return new MemoryView(core.logic);
+            }            
+        });
+        router.add(new Route("about:logic", "Logic") {
+            @Override public Object handle(Map<String, String> parameters) {
+                return new NARControls(core.logic);
+            }            
+        });
+    
+    }
+
+    protected void addOverlayLog() {
+        TextArea logoutput = new TextArea();
+        logoutput.setPrefRowCount(10);
+        
+        logoutput.setEditable(false);
+        
+        new TextOutput(core.logic) {
+
+            @Override
+            protected void outputString(String s) {
+                Platform.runLater(new Runnable() {
+                    @Override public void run() {
+                        logoutput.appendText(s+"\n");
+                    }                    
+                });
+            }
+          
+        };
+        
+        mainLayout.setOpacity(0.9);
+        underlayLayer.setCenter(logoutput);
     }
 
 }

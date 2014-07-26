@@ -64,6 +64,8 @@ public class TabManager {
         this.chromeLocField = locField;
 
         // create a browser tab pane with a custom tab closing policy which does not allow the last tab to be closed.        
+       
+        tabPane.setMinWidth(TAB_PANE_WIDTH);
         tabPane.setTabMinWidth(50);
         tabPane.setTabMaxWidth(TAB_PANE_WIDTH);
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
@@ -111,7 +113,7 @@ public class TabManager {
         
         //System.out.println("adding initial tab" + (System.currentTimeMillis() - WebBrowser.start)/1000.0);                
         // add the initialTab to the tabset.
-        addTab(new BrowserTab(c, this));
+        //addTab(new BrowserTab(c, this));
         
 
         //System.out.println("TabManager finish" + (System.currentTimeMillis() - WebBrowser.start)/1000.0);        

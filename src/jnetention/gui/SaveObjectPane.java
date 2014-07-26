@@ -1,6 +1,6 @@
 
 
-package jnetention.gui.javafx;
+package jnetention.gui;
 
 import de.jensd.fx.fontawesome.AwesomeDude;
 import de.jensd.fx.fontawesome.AwesomeIcon;

@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package jnetention.gui.javafx;
+package jnetention.gui;
 
 import java.util.Collection;
 import javafx.scene.control.ComboBox;

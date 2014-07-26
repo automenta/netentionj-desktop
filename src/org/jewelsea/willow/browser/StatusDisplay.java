@@ -23,11 +23,11 @@ package org.jewelsea.willow.browser;
 
 import javafx.beans.binding.StringExpression;
 import javafx.geometry.Insets;
+import javafx.scene.control.Label;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.ProgressBar;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
 
 /** a display to monitor status messages from the webview. */
 public class StatusDisplay extends HBox {
@@ -35,11 +35,12 @@ public class StatusDisplay extends HBox {
     private final VBox progressHolder = new VBox();
     
     public StatusDisplay(StringExpression statusProperty) {
-        Text statusText = new Text();
+        Label statusText = new Label();
+        statusText.setTextOverrun(OverrunStyle.ELLIPSIS);
+        
         statusText.textProperty().bind(statusProperty);
-        HBox.setMargin(statusText, new Insets(1, 6, 3, 6));
 
-        setEffect(new DropShadow());
+        
         getStyleClass().add("status-background");
         
         setVisible(true);
@@ -53,7 +54,7 @@ public class StatusDisplay extends HBox {
     }
     
     public void setLoadControl(ProgressBar loadControl) {
-        VBox.setMargin(loadControl, new Insets(5, 5, 10, 5));
+        VBox.setMargin(loadControl, new Insets(4, 5, 4, 5));
         progressHolder.getChildren().clear();
         progressHolder.getChildren().add(loadControl);
         

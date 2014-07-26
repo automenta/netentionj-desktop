@@ -62,10 +62,11 @@ public class BrowserTab extends UITab<WebView> {
 
     public BrowserTab(Core c, TabManager tabManager) {
         super(c, new WebView());
-        
+                
         this.view = content();
         this.tabManager = tabManager;
-                
+        
+
         init();
         
     }
@@ -82,6 +83,7 @@ public class BrowserTab extends UITab<WebView> {
         final WebView view = browser.getView();
         view.setFontSmoothingType(FontSmoothingType.GRAY);
         
+        
         // set the new browser to open any pop-up windows in a new tab.
         view.getEngine().setCreatePopupHandler(popupFeatures -> {
             final BrowserTab browserTab = new BrowserTab(core, tabManager);
@@ -96,6 +98,7 @@ public class BrowserTab extends UITab<WebView> {
         setContent(spacer);
 
         engine = getBrowser().getView().getEngine();
+        engine.loadContent(getDefaultContent());
         
         // add the tab
         graphicProperty().bind(getBrowser().faviconProperty());
@@ -190,8 +193,8 @@ public class BrowserTab extends UITab<WebView> {
         try {
             URL u = new URL(location);
             String host = u.getHost();
-            core.knowInherit(location, "_interest", 1.0, 0.99, 0.8);
-            core.knowInherit(location, host, 1.0, 0.99, 0.8);
+            core.knowInherit(location, "_interest", 1.0, 0.99, 0.9);
+            core.knowProduct(location, host, "_hostname", 1.0, 0.99, 0.8);
             
             
             int maxKeytokens = 32;
@@ -201,7 +204,7 @@ public class BrowserTab extends UITab<WebView> {
                 String t = vi.next().toString();
                 double p = f.getPct(t);
                 p = 0.5 + (p/2.0);
-                core.knowInherit(location, t, 1.0, p, p);
+                core.knowProduct(location, t, "_keyword", 1.0, p, p);
                 i++;
             }
             
@@ -213,9 +216,15 @@ public class BrowserTab extends UITab<WebView> {
             }
             
             prevLocation = location;
+            
+            
         } catch (MalformedURLException ex) {
         }
         
+    }
+
+    public String getDefaultContent() {
+        return "";
     }
 
 }

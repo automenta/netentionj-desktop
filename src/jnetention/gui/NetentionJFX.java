@@ -1,4 +1,4 @@
-package jnetention.gui.javafx;
+package jnetention.gui;
 
 import javafx.application.Application;
 import javafx.beans.value.ChangeListener;
