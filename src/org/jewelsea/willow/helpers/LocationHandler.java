@@ -33,7 +33,7 @@ import static org.jewelsea.willow.util.ResourceUtil.getString;
 public class LocationHandler {
     public static void handleLocation(WebView view, String location) {
         // todo try the JavaFX based jpedalfx viewer instead...
-        if (location.endsWith(".pdf")) {
+        /*if (location.endsWith(".pdf")) {
             SwingUtilities.invokeLater(() -> {
                 try {
                     final PDFViewer pdfViewer = new PDFViewer(false);
@@ -42,7 +42,7 @@ public class LocationHandler {
                     // just fail to open a bad pdf url silently - no action required.
                 }
             });
-        }
+        }*/
 
         // todo I wonder how to find out from WebView which documents it could not process so that I could trigger a save as for them?
         String downloadableExtension = null;

@@ -128,9 +128,10 @@ public class NavigationPanel extends TitledPane {
         fontSize.setMinorTickCount(0);
         fontSize.setShowTickMarks(true);
         fontSize.setBlockIncrement(0.1);
-        fontSize.valueProperty().addListener((observableValue, oldValue, newValue) ->
-                chrome.getBrowser().getView().setFontScale(newValue.doubleValue())
-        );
+        //fontSize.valueProperty().addListener((observableValue, oldValue, newValue) ->
+                //chrome.getBrowser().getView().setFontScale(newValue.doubleValue())
+        //);
+        
         final ImageView fontSizeIcon = new ImageView(ResourceUtil.getImage("rsz_2fontsize.png"));
         fontSizeIcon.setPreserveRatio(true);
         fontSizeIcon.setFitHeight(32);
@@ -143,23 +144,23 @@ public class NavigationPanel extends TitledPane {
         );
         HBox.setMargin(fontSizeIcon, new Insets(0, 0, 0, 8));
 
-        // create a reader button.
-        final Button readerButton = new IconButton(
-                getString("nav-panel.read"),
-                "readability.png",
-                getString("nav-panel.read.tooltip"),
-                actionEvent -> {
-                    chrome.getBrowser().getView().getEngine().executeScript(
-                            "window.readabilityUrl='" + chrome.getBrowser().getLocField().getText() + "';var s=document.createElement('script');s.setAttribute('type','text/javascript');s.setAttribute('charset','UTF-8');s.setAttribute('src','http://www.readability.com/bookmarklet/read.js');document.documentElement.appendChild(s);"
-                    );
-                }
-        );
-
+//        // create a reader button.
+//        final Button readerButton = new IconButton(
+//                getString("nav-panel.read"),
+//                "readability.png",
+//                getString("nav-panel.read.tooltip"),
+//                actionEvent -> {
+//                    chrome.getBrowser().getView().getEngine().executeScript(
+//                            "window.readabilityUrl='" + chrome.getBrowser().getLocField().getText() + "';var s=document.createElement('script');s.setAttribute('type','text/javascript');s.setAttribute('charset','UTF-8');s.setAttribute('src','http://www.readability.com/bookmarklet/read.js');document.documentElement.appendChild(s);"
+//                    );
+//                }
+//        );
+//
         // create a box for displaying navigation options.
         VBox navigationBox = new VBox();
         navigationBox.setSpacing(5);
         navigationBox.setStyle("-fx-padding: 5");
-        navigationBox.getChildren().addAll(homeButton, historyButton, bookmarksButton, readerButton, fontsizer);
+        navigationBox.getChildren().addAll(homeButton, historyButton, bookmarksButton, /*readerButton,*/ fontsizer);
         final TitledPane navPanel = new TitledPane(getString("nav-panel.title"), navigationBox);
         navPanel.getStyleClass().add("sidebar-panel");
 

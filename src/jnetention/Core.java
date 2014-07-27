@@ -525,6 +525,7 @@ public class Core extends EventEmitter {
                 .replaceAll("%", "\u25B9") //TODO find a different unicode char
                 .replaceAll("#", "\u25BA") //TODO find a different unicode char
                 .replaceAll("&", "\u25BB") //TODO find a different unicode char
+                .replaceAll("?", "\u25FFEE") //TODO find a different unicode char
                 .replaceAll("/", "\u25BC") //TODO find a different unicode char
                 .replaceAll("=", "\u25BD") //TODO find a different unicode char
                 .replaceAll(";", "\u25BE") //TODO find a different unicode char

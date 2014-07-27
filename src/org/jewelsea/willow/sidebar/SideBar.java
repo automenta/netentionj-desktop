@@ -64,19 +64,19 @@ public class SideBar {
 
         // create sidebar panels.
         final TitledPane navigationPanel = new NavigationPanel(chrome);
-        final TitledPane developerPanel  = new DeveloperPanel(chrome);
+        //final TitledPane developerPanel  = new DeveloperPanel(chrome);
         final TitledPane demoPanel       = new DemoPanel(chrome);
         final TitledPane benchPanel      = new BenchPanel(chrome);
 
         // size all of the panes similarly.
         navigationPanel.prefWidthProperty().bind(benchPanel.prefWidthProperty());
-        developerPanel.prefWidthProperty().bind(benchPanel.prefWidthProperty());
+        //developerPanel.prefWidthProperty().bind(benchPanel.prefWidthProperty());
         demoPanel.prefWidthProperty().bind(benchPanel.prefWidthProperty());
 
         // put the panes inside the sidebar.
         bar.getChildren().addAll(
                 navigationPanel,
-                developerPanel,
+                //developerPanel,
                 demoPanel,
                 benchPanel,
                 spacer

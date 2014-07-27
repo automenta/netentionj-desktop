@@ -30,13 +30,9 @@ import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.io.InputStream;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -51,12 +47,9 @@ public class ResourceUtil {
     static ResourceBundle resources;
     static {
         try {
-            File file = new File("./src/resources");
-            URL[] urls = {file.toURI().toURL()};
-            ClassLoader loader = new URLClassLoader(urls);
-            resources = ResourceBundle.getBundle("browser", Locale.getDefault(), loader);
-        } catch (MalformedURLException ex) {
-            Logger.getLogger(ResourceUtil.class.getName()).log(Level.SEVERE, null, ex);
+            resources = ResourceBundle.getBundle("resources/browser", Locale.getDefault());
+        } catch (RuntimeException ex) {
+            Logger.getLogger(ResourceUtil.class.getName()).log(Level.SEVERE, null, ex);            
         }
     }
 
@@ -74,24 +67,21 @@ public class ResourceUtil {
     /**
      * Get a resource relative to the application class.
      */
-    static File  getResource(String path) {
+    static InputStream getResource(String path) {
         
-        //System.out.println( ResourceUtil.class.getResource("../../../../../") );;
-        //return ClassLoader.getSystemResource("../resources/org/jewelsea/willow/" + path).toExternalForm();
-        return new File("./src/resources/" + path);
+            //System.out.println( ResourceUtil.class.getResource("../../../../../") );;
+            //return ClassLoader.getSystemResource("../resources/org/jewelsea/willow/" + path).toExternalForm();
+            return ClassLoader.getSystemResourceAsStream("resources/" + path);
+        //return new File("./src/resources/" + path);
+        //return null;
     }
 
     /**
      * Get a image resource in an images/ path relative to the application class.
      */
     public static Image getImage(String imageFilename) {
-        File i = ResourceUtil.getResource("icon/" + imageFilename);
-        try {
-            return new Image(new FileInputStream(i));
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(ResourceUtil.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        return null;
+        InputStream i = ResourceUtil.getResource("icon/" + imageFilename);
+        return new Image(i);
     }
 
     /**
