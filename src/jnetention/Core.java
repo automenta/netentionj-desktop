@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Random;
 import nars.core.DefaultNARBuilder;
 import nars.core.NAR;
+import nars.io.Termize;
 import nars.io.TextInput;
 import nars.io.TextOutput;
 import net.tomp2p.connection.Bindings;
@@ -443,17 +444,18 @@ public class Core extends EventEmitter {
         return myself;
     }
 
-    protected void index(NObject previous, NObject next) {
+    protected void index(NObject previous, NObject o) {
         if (previous!=null) {
             if (previous.isClass()) {
                 
             }
         }
         
-        if (next!=null) {
-            if (next.isClass()) {
-                String clas = next.id;
-                for (Map.Entry<String, Object> e : next.value.entries()) {
+        if (o!=null) {
+            
+            if ((o.isClass()) || (o.isProperty())) {
+                String clas = n(o.id);                
+                for (Map.Entry<String, Object> e : o.value.entries()) {
                     String superclass = e.getKey();
                     if (superclass.equals("tag"))
                         continue;
@@ -470,9 +472,18 @@ public class Core extends EventEmitter {
                     new TextInput(logic, s);
                     think();
 
+                    if (o.isProperty()) {
+                        if (o instanceof NProperty) {
+                            NProperty p = (NProperty)o;
+                            for (String d : p.domain) {
+                                knowProduct(d, p.id, "property", freq, conf, 0.9);
+                            }
+                        }
+                    }
                 }
                 
             }
+            
         }
         
     }
@@ -520,18 +531,7 @@ public class Core extends EventEmitter {
         }    
     
     public static String n(String s) {        
-        return s.replaceAll(":", "\u25B8")
-                .replaceAll(" ", "\u2581")
-                .replaceAll("%", "\u25B9") //TODO find a different unicode char
-                .replaceAll("#", "\u25BA") //TODO find a different unicode char
-                .replaceAll("&", "\u25BB") //TODO find a different unicode char
-                .replaceAll("?", "\u25FFEE") //TODO find a different unicode char
-                .replaceAll("/", "\u25BC") //TODO find a different unicode char
-                .replaceAll("=", "\u25BD") //TODO find a different unicode char
-                .replaceAll(";", "\u25BE") //TODO find a different unicode char
-                .replaceAll("-", "\u25BF") //TODO find a different unicode char                
-                .replaceAll("\\.", "\uFFED") //TODO find a different unicode char
-                ;
+        return Termize.enterm(s);
     }
 
     public Object getTag(String tagID) {

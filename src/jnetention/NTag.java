@@ -21,7 +21,7 @@ public class NTag extends NObject {
         return new NTag(sysTag.name(), sysTag.name());
     }
     
-    String description;
+    public String description;
 
     protected NTag(String id) {
         this(id, id);
@@ -35,17 +35,24 @@ public class NTag extends NObject {
         super(name, id);
         
 
-        add(Tag.tag.toString(), 1.0);
+        addDefaultTags();
         if (extend!=null)
             add(extend, 1.0);
         
+    }
+    
+    protected void addDefaultTags() {
+        add(Tag.tag.toString(), 1.0);        
     }
         
     public NTag(String id, String name, List<String> extend) {
         this(id, name, (String)null);
         
-        for (String c : extend)
-            add(c, 1.0);
+        for (String c : extend) {
+            c = c.trim();
+            if (c.length() == 0) continue;
+            add(c, 1.0);            
+        }
     }
     
     public void mergeFrom(NTag c) {

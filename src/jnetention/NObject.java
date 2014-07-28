@@ -152,6 +152,9 @@ public class NObject extends Value implements Serializable, Comparable {
     public boolean isClass() {
         return hasTag(Tag.tag);
     }
+    public boolean isProperty() {
+        return hasTag(Tag.property);
+    }    
 
     public Map<String, Double> getTagStrengths() {
         Map<String,Double> s = new HashMap();

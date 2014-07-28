@@ -21,10 +21,13 @@
 
 package jnetention.run;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.animation.Animation;
 import javafx.animation.Transition;
 import javafx.application.Application;
@@ -56,6 +59,7 @@ import javax.swing.JComponent;
 import jnetention.Core;
 import jnetention.gui.IndexTreePane;
 import jnetention.gui.NodeControlPane;
+import jnetention.util.SchemaOrg;
 import nars.gui.NARControls;
 import nars.gui.output.MemoryView;
 import nars.io.TextOutput;
@@ -134,6 +138,12 @@ public class WebBrowser extends Application {
     @Override
     public void start(final Stage stage) throws MalformedURLException, UnsupportedEncodingException {
         System.out.println("WebBrowser.start()" + (System.currentTimeMillis() - start)/1000.0);
+        
+        try {
+            new SchemaOrg(core);
+        } catch (IOException ex) {
+            Logger.getLogger(WebBrowser.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
         initRoutes();
         
