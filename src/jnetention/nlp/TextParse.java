@@ -27,13 +27,13 @@ import java.util.Set;
  *
  * @author me
  */
-public class NLParse implements Serializable {
+public class TextParse implements Serializable {
     
     public Annotation annotation;
 
-    public NLParse() {     }
+    public TextParse() {     }
     
-    public NLParse(Annotation annotation) {
+    public TextParse(Annotation annotation) {
         this.annotation = annotation;
     }
     
@@ -118,7 +118,14 @@ public class NLParse implements Serializable {
         }       
         return a;
     }
-
+    public List<String> getWords() {
+        List<String> a = new ArrayList();
+        
+        for (CoreLabel c : getTokens())
+            a.add(getWord(c));
+        
+        return a;            
+    }
     public List<String> getVerbs() {
         List<String> a = new ArrayList();
         

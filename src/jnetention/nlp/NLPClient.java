@@ -7,6 +7,7 @@
 package jnetention.nlp;
 
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
+import edu.stanford.nlp.ling.CoreLabel;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -38,28 +39,31 @@ public class NLPClient {
    }
 
 
-    public NLParse parse(String input) {
+    public TextParse parse(String input) {
         try {
             if (impl!=null)
-                return (NLParse)fromString(impl.parse(input));
+                return (TextParse)fromString(impl.parse(input));
             return null;
         } catch (IOException ex) {
             Logger.getLogger(NLPClient.class.getName()).log(Level.SEVERE, null, ex);
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(NLPClient.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return new NLParse();
+        return new TextParse();
     }
     
     public static void main(String[] args) throws Exception {
         
         NLPClient client = new NLPClient("localhost", 8080);
-        NLParse p = client.parse("This is NetBean's sentence. My sentences include another one.");
+        TextParse p = client.parse("This is NetBean's sentence. My sentences readily include another crazy one.");
         System.out.println(p.annotation);
         System.out.println(p.getSentences());
         System.out.println(p.getNamedEntities());
         System.out.println(p.getVerbs());
         System.out.println(p.getDependencies(false).toFormattedString());
+        for (CoreLabel w : p.getTokens()) {
+            System.out.println("  " + WordParse.getFirst(p.getWord(w), p.getPOS(w)));
+        }
     }    
     
 }

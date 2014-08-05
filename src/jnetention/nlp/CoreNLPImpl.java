@@ -78,7 +78,7 @@ public class CoreNLPImpl implements CoreNLPService {
         System.out.println("  out: " + annotation.toShortString());
         
         try {
-            return toString(new NLParse(annotation));
+            return toString(new TextParse(annotation));
         } catch (IOException ex) {
             Logger.getLogger(CoreNLPImpl.class.getName()).log(Level.SEVERE, null, ex);
         }
