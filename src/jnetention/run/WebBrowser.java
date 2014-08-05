@@ -139,11 +139,13 @@ public class WebBrowser extends Application {
     public void start(final Stage stage) throws MalformedURLException, UnsupportedEncodingException {
         System.out.println("WebBrowser.start()" + (System.currentTimeMillis() - start)/1000.0);
         
+        /*
         try {
             new SchemaOrg(core);
         } catch (IOException ex) {
             Logger.getLogger(WebBrowser.class.getName()).log(Level.SEVERE, null, ex);
         }
+        */
         
         initRoutes();
         
@@ -551,7 +553,7 @@ public class WebBrowser extends Application {
     }
 
     protected void addOverlayLog() {
-        TextArea logoutput = new TextArea();
+        /*TextArea logoutput = new TextArea();
         logoutput.setPrefRowCount(10);
         
         logoutput.setEditable(false);
@@ -570,7 +572,7 @@ public class WebBrowser extends Application {
         };
         
         mainLayout.setOpacity(0.9);
-        underlayLayer.setCenter(logoutput);
+        underlayLayer.setCenter(logoutput);*/
     }
 
 }

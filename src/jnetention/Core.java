@@ -469,7 +469,7 @@ public class Core extends EventEmitter {
                     double conf = 0.95;
                     
                     String s = "<" + n(clas) + " --> " + n(superclass) + ">. %" + freq + ";" + conf + "%";
-                    new TextInput(logic, s);
+                    logic.addInput(new TextInput(s));
                     think();
 
                     if (o.isProperty()) {

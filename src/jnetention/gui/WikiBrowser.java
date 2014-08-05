@@ -376,7 +376,7 @@ abstract public class WikiBrowser extends BorderPane {
     public class WikiOntology {
 
         public WikiOntology() {            
-            new TextInput(core.logic, "<<(*,$1,$2) --> WikiLink> ==> <$1 <-> $2>>. %0.99;0.80%");
+            core.logic.addInput(new TextInput("<<(*,$1,$2) --> WikiLink> ==> <$1 <-> $2>>. %0.99;0.80%"));
             core.think();            
         }
 
