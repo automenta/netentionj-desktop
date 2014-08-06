@@ -6,6 +6,7 @@
 
 package jnetention.nlp;
 
+
 import edu.stanford.nlp.dcoref.CorefCoreAnnotations.CorefClusterAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -22,6 +23,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  *
@@ -55,15 +59,12 @@ public class TextParse implements Serializable {
         return sentence.get(TreeCoreAnnotations.TreeAnnotation.class);        
     }
     
-    public static String getSentiment(CoreMap sentence) {
-        //TODO: System.out.println("sentiment: " + sentence.get(SentimentCoreAnnotations.AnnotatedTree.
-        
+    public static String getSentiment(CoreMap sentence) {       
         return sentence.get(SentimentCoreAnnotations.ClassName.class);
     }
     
-   public Set<CoreLabel> getCorefGraph(CoreMap sentence, boolean collapsed) {
+    public Set<CoreLabel> getCorefCluster(CoreMap sentence) {
             return sentence.get(CorefClusterAnnotation.class);
-
     }
    
     public SemanticGraph getDependencies(CoreMap sentence, boolean collapsed) {
@@ -91,11 +92,19 @@ public class TextParse implements Serializable {
     public SemanticGraph getDependencies(boolean b) {
         List<TypedDependency> l = new ArrayList();        
         for (CoreMap s : getSentences()) {
-            SemanticGraph g = getDependencies(s, b);
+            SemanticGraph g = getDependencies(s, b);            
             l.addAll(g.typedDependencies());
         }
         SemanticGraph graph = new SemanticGraph(l);
         return graph;
+    }
+    public List<Set<CoreLabel>> getCorefCluster() {
+        List<Set<CoreLabel>> l = new ArrayList();        
+        for (CoreMap s : getSentences()) {
+            Set<CoreLabel> g = getCorefCluster(s);
+            l.add(g);
+        }
+        return l;
     }
 
     public List<CoreLabel> getTokens() {
@@ -138,5 +147,41 @@ public class TextParse implements Serializable {
         return a;            
     }
 
+    public List<Tree> getTrees() {
+        List<Tree> c = new ArrayList();
+        for (CoreMap s: getSentences()) {    
+            Tree ts = getTree(s);
+            if (ts!=null)
+                c.add(ts);
+        }
+        return c;   
+    }
+
+
+
+    public static Stream<Tree> getSubTrees(CoreMap sentence, Predicate<Tree> filter) {
+        Tree t = getTree(sentence);
+        if (t != null)
+            return t.stream().filter(filter);                    
+        else
+            return Stream.empty();
+    }
+    
+    public static Stream<Tree> getPhrases(CoreMap sentence, String label) {
+        return getSubTrees(sentence, t -> t.label().value().equals(label));                
+    }
+
+    public List<Tree> getNounPhrases() {        
+        return getSentences().stream().flatMap(s -> getPhrases(s, "NP")).collect(Collectors.toList());
+    }    
+    public List<Tree> getVerbPhrases() {        
+        return getSentences().stream().flatMap(s -> getPhrases(s, "VP")).collect(Collectors.toList());
+    }
+    public List<Tree> getAdverbPhrases() {        
+        return getSentences().stream().flatMap(s -> getPhrases(s, "ADVP")).collect(Collectors.toList());
+    }
+    public List<Tree> getBePhrases() {        
+        return getSentences().stream().flatMap(s -> getPhrases(s, "ADVP")).collect(Collectors.toList());
+    }
     
 }

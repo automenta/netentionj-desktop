@@ -7,6 +7,7 @@
 package jnetention.nlp;
 
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
+import edu.mit.jwi.item.POS;
 import edu.stanford.nlp.ling.CoreLabel;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -62,7 +63,9 @@ public class NLPClient {
         System.out.println(p.getVerbs());
         System.out.println(p.getDependencies(false).toFormattedString());
         for (CoreLabel w : p.getTokens()) {
-            System.out.println("  " + WordParse.getFirst(p.getWord(w), p.getPOS(w)));
+            POS pos = WordParse.getCoreNLPPOS(p.getPOS(w));
+            if (pos!=null)
+                System.out.println("  " + WordParse.getAll(p.getWord(w), pos));
         }
     }    
     

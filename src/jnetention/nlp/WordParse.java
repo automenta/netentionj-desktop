@@ -15,6 +15,7 @@ import edu.mit.jwi.item.POS;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,22 +47,41 @@ public class WordParse implements Serializable {
     }
 
     /** translate CoreNLP POS string to Wordnet POS */
-    public static WordParse getFirst(String wordString, String pos) {
-        System.out.println(wordString + " POS: " + pos);
+    public static POS getCoreNLPPOS(String pos) {
         if (pos.startsWith("N"))
-            return getFirst(wordString, POS.NOUN);
+            return POS.NOUN;
         else if (pos.startsWith("V"))
-            return getFirst(wordString, POS.VERB);
+            return POS.VERB;
         else if (pos.equals("JJ"))
-            return getFirst(wordString, POS.ADJECTIVE);
+            return POS.ADJECTIVE;
         else if (pos.equals("RB"))
-            return getFirst(wordString, POS.ADVERB);
-        return null;
+            return POS.ADVERB;
+        return null;           
     }
+
     
     public static List<WordParse> getAll(String wordString, POS pos) {
-        //TODO
-        return null;
+        if (dict == null) {
+            return null;            
+        }
+        
+        IIndexWord idxWord = dict.getIndexWord(wordString, pos);
+        if (idxWord == null)
+            return null;
+        
+        List<IWordID> words = idxWord.getWordIDs();
+        if (words == null)
+            return null;
+        
+        List<WordParse> parsed = new ArrayList(words.size());        
+        for (IWordID iw : words) {
+        
+            IWordID wordID = idxWord.getWordIDs().get(0);
+            IWord word = dict.getWord(wordID);
+            parsed.add(new WordParse(wordString, word));
+        }
+        return parsed;
+        
     }
     
     public static WordParse getFirst(String wordString, POS pos) {
