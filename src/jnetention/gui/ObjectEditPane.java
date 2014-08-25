@@ -32,7 +32,6 @@ import jnetention.NObject;
 import jnetention.Scope;
 import jnetention.gui.TaggerPane.TagReceiver;
 import org.w3c.dom.Document;
-import org.w3c.dom.Text;
 
 /**
  *
@@ -106,27 +105,11 @@ public class ObjectEditPane extends BorderPane implements TagReceiver {
         
         ToggleButton focusButton = new ToggleButton();
         AwesomeDude.setIcon(focusButton, AwesomeIcon.STAR);
-        focusButton.setSelected(true);        
-        
-        focusButton.setOnAction(new EventHandler<ActionEvent>() {
-            @Override public void handle(ActionEvent event) {
-                if (focusButton.isSelected()) {
-                    tagger.setVisible(true);            
-                    editCenter.getItems().clear();
-                    editCenter.getItems().addAll(tagger, editPane );
-                    editCenter.setDividerPositions(0.3);
-                }
-                else {
-                    tagger.setVisible(false);
-                    editCenter.getItems().clear();
-                    editCenter.getItems().addAll(editPane );
-                    editCenter.setDividerPositions(0);
-                }
-            }
-        });
+                
         
         
-        TextField nameArea = new TextField(name);        
+        TextField nameArea = new TextField(name);    
+        nameArea.setPromptText("Title");
         nameArea.setFont(BigFont);
         focusButton.setFont(BigFont);
         
@@ -171,9 +154,32 @@ public class ObjectEditPane extends BorderPane implements TagReceiver {
         
         setCenter(editCenter);
 
+        focusButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override public void handle(ActionEvent event) {
+                if (focusButton.isSelected()) {
+                    tagger.setVisible(true);            
+                    editCenter.getItems().clear();
+                    editCenter.getItems().addAll(tagger, editPane );
+                    editCenter.setDividerPositions(0.3);
+                }
+                else {
+                    disableTagger();
+                }
+            }
+
+        });
+        disableTagger();
+        focusButton.setSelected(false);        
         
                 
         
+    }
+    
+    private void disableTagger() {
+        tagger.setVisible(false);
+        editCenter.getItems().clear();
+        editCenter.getItems().addAll(editPane );
+        editCenter.setDividerPositions(0);
     }
     
     private static final Insets DefaultPadding = new Insets(4,4,4,4);
@@ -186,10 +192,10 @@ public class ObjectEditPane extends BorderPane implements TagReceiver {
             
         }
         
-        sb.append("<hr/>");
+        /*sb.append("<hr/>");
         
         String raw = n.toStringDetailed();
-        sb.append(raw);
+        sb.append(raw);*/
         
         return sb.toString();
     }
@@ -200,9 +206,9 @@ public class ObjectEditPane extends BorderPane implements TagReceiver {
     }
 
     public static String newTagHTML(String key, Object value) {
-        String s = "<span contenteditable='false' style='-webkit-user-modify: read-only; border: 1px solid gray'>";
+        String s = "&nbsp;<span><span contenteditable='false' style='-webkit-user-modify: read-only; border: 1px solid gray'>";
         s += key + " = " + value.toString();
-        s += "</span>";
+        s += "</span></span>&nbsp;";
         return s;
     }
 

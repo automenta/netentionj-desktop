@@ -18,6 +18,8 @@ public enum Tag {
     
     Can, Need, Not,
     
+    Web, 
+    
     tag, property
            
 }

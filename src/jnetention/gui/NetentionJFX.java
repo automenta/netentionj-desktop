@@ -1,31 +1,17 @@
 package jnetention.gui;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.embed.swing.SwingNode;
-import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.geometry.Insets;
-import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Accordion;
-import javafx.scene.control.Button;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TitledPane;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
-import javax.swing.SwingUtilities;
 import jnetention.Core;
 import jnetention.NObject;
-import jnetention.gui.swing.SwingMap;
-import nars.gui.NARControls;
-import org.jxmapviewer.viewer.GeoPosition;
 
 /**
  *
@@ -60,7 +46,26 @@ abstract public class NetentionJFX extends Application {
             }
         });
     }
+    
+   static void popup(Core core, Parent n) {
+        Stage st = new Stage();
 
+        st.setScene(new Scene(n));
+        st.show();
+    }
+   static void popup(Core core, Application a) {
+        Stage st = new Stage();
+
+        BorderPane root = new BorderPane();
+        st.setScene(new Scene(root));
+        try {
+            a.start(st);
+        } catch (Exception ex) {
+            Logger.getLogger(NetentionJFX.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        st.show();
+    }
 
     static void popupObjectView(Core core, NObject n) {
         Stage st = new Stage();

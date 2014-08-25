@@ -12,15 +12,11 @@ import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.scene.layout.BorderPane;
 import javafx.util.Callback;
 import jfxtras.scene.control.agenda.Agenda;
 import jfxtras.scene.control.agenda.Agenda.AppointmentGroup;
 import jfxtras.scene.control.agenda.Agenda.CalendarRange;
-import jnetention.gui.swing.SwingMap;
-import org.jxmapviewer.viewer.GeoPosition;
 
 /**
  *
@@ -34,6 +30,8 @@ public class TimePanel extends BorderPane {
         super();
         
         this.agenda = null;
+        init();
+        /*
         visibleProperty().addListener(new ChangeListener<Boolean>() {
             boolean firstvisible = true;
             @Override
@@ -44,6 +42,7 @@ public class TimePanel extends BorderPane {
                 }
             }
         });        
+        */
     }
 
     

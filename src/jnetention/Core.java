@@ -21,11 +21,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import nars.core.DefaultNARBuilder;
 import nars.core.NAR;
-import nars.io.Termize;
 import nars.io.TextInput;
 import nars.io.TextOutput;
+import nars.io.Texts;
+import nars.util.ContinuousBagNARBuilder;
 import net.tomp2p.connection.Bindings;
 import net.tomp2p.connection.DiscoverNetworks;
 import net.tomp2p.dht.FutureGet;
@@ -90,11 +90,9 @@ public class Core extends EventEmitter {
     }
     
     public Core(DB db) {
-        logic = new DefaultNARBuilder().
-                setConceptBagLevels(400).
-                setTaskLinkBagLevels(16).
-                setTermLinkBagLevels(16).
-                setConceptBagSize(4096).build();
+        logic = new ContinuousBagNARBuilder().
+                setConceptBagSize(16000).
+                build();
         
         
         new TextOutput(logic, System.out).setErrors(true);
@@ -531,7 +529,7 @@ public class Core extends EventEmitter {
         }    
     
     public static String n(String s) {        
-        return Termize.enterm(s);
+        return Texts.escapeLiteral(s).toString();
     }
 
     public Object getTag(String tagID) {

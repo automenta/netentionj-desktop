@@ -6,8 +6,8 @@
 
 package jnetention.gui;
 
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
+import de.jensd.fx.fontawesome.AwesomeDude;
+import de.jensd.fx.fontawesome.AwesomeIcon;
 import javafx.embed.swing.SwingNode;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -29,6 +29,7 @@ import javax.swing.SwingUtilities;
 import jnetention.Core;
 import jnetention.NObject;
 import jnetention.gui.swing.SwingMap;
+import jnetention.run.WebBrowser;
 import nars.gui.NARControls;
 import org.jxmapviewer.viewer.GeoPosition;
 
@@ -47,11 +48,12 @@ public class NodeControlPane extends BorderPane {
        
         TabPane tab = new TabPane();      
         tab.getTabs().add(newIndexTab());                
-        tab.getTabs().add(newOptionsTab());                
         tab.getTabs().add(newWikiTab());
         tab.getTabs().add(newSpacetimeTab());
         tab.getTabs().add(newSpaceTab());
         tab.getTabs().add(newTimeTab());
+        tab.getTabs().add(newOptionsTab());
+        
         tab.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tab.autosize();
         
@@ -59,9 +61,24 @@ public class NodeControlPane extends BorderPane {
         
         FlowPane menu = new FlowPane();
         menu.getChildren().add(newAddButton());
+        menu.getChildren().add(newBrowserButton());
         
         setBottom(menu);
     }
+    
+    public Button newBrowserButton() {
+        Button b = new Button(/**/);
+        AwesomeDude.setIcon(b, AwesomeIcon.LINK);
+        b.setOnAction(new EventHandler<ActionEvent>() {
+            @Override public void handle(ActionEvent event) {
+                NetentionJFX.popup(core, new WebBrowser(core));
+            }
+
+        });
+        return b;
+        
+    }
+    
     public Button newAddButton() {
         Button b = new Button("+");
         b.setOnAction(new EventHandler<ActionEvent>() {
@@ -75,57 +92,46 @@ public class NodeControlPane extends BorderPane {
     
     
     public Tab newWikiTab() {
-        Tab t = new Tab("Wiki");
-        
+        Tab t = new Tab(/*"Wiki"*/);
+        AwesomeDude.setIcon(t, AwesomeIcon.TAGS);
         t.setContent(new WikiTagger(core, "Self"));
         
         return t;
     }    
     
     public Tab newSpaceTab() {
-        Tab t = new Tab("Space");
+        Tab t = new Tab(/*"Space"*/);
+        AwesomeDude.setIcon(t, AwesomeIcon.MAP_MARKER);
         
         SwingNode swingMap = new SwingNode();
-        swingMap.visibleProperty().addListener(new ChangeListener<Boolean>() {
-            boolean firstvisible = true;
-            @Override
-            public void changed(ObservableValue<? extends Boolean> o, Boolean a, Boolean b) {
-                if (swingMap.isVisible() && firstvisible) {
+//        swingMap.visibleProperty().addListener(new ChangeListener<Boolean>() {
+//            boolean firstvisible = true;
+//            @Override
+//            public void changed(ObservableValue<? extends Boolean> o, Boolean a, Boolean b) {
+//                if (swingMap.isVisible() && firstvisible) {
                     swingMap.setContent(new SwingMap( new GeoPosition(40.00, -80.00)));
-                    firstvisible = false;
-                }
-            }
-        });
+//                    firstvisible = false;
+//                }
+//            }
+//        });
         t.setContent(swingMap);
         return t;
     }
     public Tab newTimeTab() {
-        Tab tab = new Tab("Time");
-        
+        Tab tab = new Tab(/*"Time"*/);
+        AwesomeDude.setIcon(tab, AwesomeIcon.CLOCK_ALT);
         tab.setContent(new TimePanel());
-        
-        /*
-        SwingNode timeNode = new SwingNode();        
-        
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override public void run() {
-                //timeNode.setContent(new TimePanel());                
-            }            
-        });
-        tab.setContent(timeNode);        
-                */
-        
-        
                 
         return tab;
     }    
     public Tab newSpacetimeTab() {
-        Tab t = new Tab("Spacetime");
+        Tab t = new Tab(/*"Spacetime"*/);
+        AwesomeDude.setIcon(t, AwesomeIcon.CUBES);
         return t;
     }    
     public Tab newOptionsTab() {
-        Tab t = new Tab("Options");
-        
+        Tab t = new Tab(/*"Options"*/);
+        AwesomeDude.setIcon(t, AwesomeIcon.COGS);
         
         Accordion a =new Accordion();
         
@@ -138,7 +144,8 @@ public class NodeControlPane extends BorderPane {
         return t;
     }    
     public Tab newIndexTab() {
-        Tab t = new Tab("Index");
+        Tab t = new Tab(/*"Index"*/);
+        AwesomeDude.setIcon(t, AwesomeIcon.LIST);
         t.setContent(new IndexTreePane(core, new TaggerPane.TagReceiver() {
 
             @Override

@@ -21,21 +21,20 @@
 
 package org.jewelsea.willow.navigation;
 
+import de.jensd.fx.fontawesome.AwesomeDude;
+import de.jensd.fx.fontawesome.AwesomeIcon;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Tooltip;
 import javafx.scene.effect.ColorAdjust;
-import javafx.scene.effect.InnerShadow;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import jnetention.run.WebBrowser;
 import org.jewelsea.willow.util.ResourceUtil;
-
 import static org.jewelsea.willow.util.ResourceUtil.getString;
 
 public class NavTools {
@@ -48,14 +47,16 @@ public class NavTools {
         backButton.setTooltip(new Tooltip(getString("nav-toolbar.back.tooltip")));
                         
         
-        final ImageView backGraphic = new ImageView(ResourceUtil.getImage("239706184.png"));
-        final ColorAdjust backColorAdjust = new ColorAdjust();
-        backColorAdjust.setBrightness(-0.1);
-        backColorAdjust.setContrast(-0.1);
-        backGraphic.setEffect(backColorAdjust);                
-        backButton.setGraphic(backGraphic);
-        backGraphic.setPreserveRatio(true);
-        backGraphic.setFitHeight(buttonHeight);        
+        //final ImageView backGraphic = new ImageView(ResourceUtil.getImage("239706184.png"));
+        AwesomeDude.setIcon(backButton, AwesomeIcon.BACKWARD);
+        
+  //      final ColorAdjust backColorAdjust = new ColorAdjust();
+//        backColorAdjust.setBrightness(-0.1);
+//        backColorAdjust.setContrast(-0.1);
+        //backGraphic.setEffect(backColorAdjust);                
+        //backButton.setGraphic(backGraphic);
+        //backGraphic.setPreserveRatio(true);
+        //backGraphic.setFitHeight(buttonHeight);        
         backButton.onActionProperty().set(actionEvent -> {
             if (chrome.getBrowser().getHistory().canNavBack()) {
                 chrome.getBrowser().go(chrome.getBrowser().getHistory().requestNavBack());
@@ -71,14 +72,16 @@ public class NavTools {
         final Button forwardButton = new Button();
         forwardButton.setId("forwardButton"); // todo I don't like this id set just for lookup - reference would be better
         forwardButton.setTranslateX(-2);
-        final ImageView forwardGraphic = new ImageView(ResourceUtil.getImage("1813406178.png"));
-        final ColorAdjust forwardColorAdjust = new ColorAdjust();
-        forwardColorAdjust.setBrightness(-0.1);
-        forwardColorAdjust.setContrast(-0.1);
-        forwardGraphic.setEffect(forwardColorAdjust);
-        forwardGraphic.setPreserveRatio(true);
-        forwardGraphic.setFitHeight(buttonHeight);
-        forwardButton.setGraphic(forwardGraphic);
+        AwesomeDude.setIcon(forwardButton, AwesomeIcon.FORWARD);
+        
+        //final ImageView forwardGraphic = new ImageView(ResourceUtil.getImage("1813406178.png"));
+        //final ColorAdjust forwardColorAdjust = new ColorAdjust();
+//        forwardColorAdjust.setBrightness(-0.1);
+//        forwardColorAdjust.setContrast(-0.1);
+//        forwardGraphic.setEffect(forwardColorAdjust);
+//        forwardGraphic.setPreserveRatio(true);
+//        forwardGraphic.setFitHeight(buttonHeight);
+//        forwardButton.setGraphic(forwardGraphic);
         forwardButton.setTooltip(new Tooltip(getString("nav-toolbar.forward.tooltip")));
         forwardButton.onActionProperty().set(actionEvent -> {
             if (chrome.getBrowser().getHistory()!=null) 

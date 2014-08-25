@@ -21,13 +21,13 @@
 
 package jnetention.run;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.animation.Animation;
 import javafx.animation.Transition;
 import javafx.application.Application;
@@ -38,31 +38,38 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.embed.swing.SwingNode;
+import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.Tab;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.TransferMode;
-import javafx.scene.layout.*;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.text.FontSmoothingType;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import javax.swing.JComponent;
 import jnetention.Core;
+import jnetention.NObject;
 import jnetention.gui.IndexTreePane;
 import jnetention.gui.NodeControlPane;
-import jnetention.util.SchemaOrg;
 import nars.gui.NARControls;
 import nars.gui.output.MemoryView;
-import nars.io.TextOutput;
 import org.jewelsea.willow.browser.BrowserTab;
 import org.jewelsea.willow.browser.BrowserWindow;
 import org.jewelsea.willow.browser.LoadingProgressDisplay;
@@ -75,10 +82,8 @@ import org.jewelsea.willow.util.ResourceUtil;
 import static org.jewelsea.willow.util.ResourceUtil.getString;
 
 public class WebBrowser extends Application {
-    final public static long start = System.currentTimeMillis();
-    static {        
-        System.out.println("Static start " + (System.currentTimeMillis() - start)/1000.0);
-    }
+    @Deprecated final public static long start = System.currentTimeMillis();
+    
     private AnchorPane overlayLayer;
     private BorderPane underlayLayer;
     
@@ -133,11 +138,31 @@ public class WebBrowser extends Application {
     private ChangeListener<String> browserLocFieldChangeListener;
     private ChangeListener<String> chromeLocFieldChangeListener;
 
-    private Core core = new Core();
+    private Core core;
 
+    public WebBrowser(Core c) {
+        this.core = c;
+    }
+
+    public NObject newBrowserState() {
+        List<String> urls = new ArrayList();
+        for (Tab t : tabManager.tabPane.getTabs()) {
+            if (t instanceof BrowserTab) {
+                BrowserTab bt = (BrowserTab)t;
+                urls.add(bt.getLocation());
+            }
+        }
+        NObject o = core.newObject("Web Browsing @ " + new Date().toString());
+        o.add("Web");
+        for (String u : urls) 
+            o.add(u);
+        return o;        
+    }
+    
     @Override
     public void start(final Stage stage) throws MalformedURLException, UnsupportedEncodingException {
         System.out.println("WebBrowser.start()" + (System.currentTimeMillis() - start)/1000.0);
+    
         
         /*
         try {
@@ -162,7 +187,7 @@ public class WebBrowser extends Application {
         //sidebar = SideBar.createSidebar(this);        
         sidebar = new NodeControlPane(core);
         
-        System.out.println("created sidebar" + (System.currentTimeMillis() - start)/1000.0);        
+        //System.out.println("created sidebar" + (System.currentTimeMillis() - start)/1000.0);        
 
         // initialize the location field in the Chrome.
         chromeLocField.setPromptText(getString("location.prompt"));
@@ -178,7 +203,7 @@ public class WebBrowser extends Application {
         final Pane navPane = NavTools.createNavPane(this);
         mainLayout.setTop(navPane);
 
-        System.out.println("navpane added " + (System.currentTimeMillis() - start)/1000.0);
+        //System.out.println("navpane added " + (System.currentTimeMillis() - start)/1000.0);
 
         
                 
@@ -202,7 +227,7 @@ public class WebBrowser extends Application {
                 browserChanged(oldBrowser, newBrowser, stage, overlayLayer)
         );
 
-        System.out.println("creating scene " + (System.currentTimeMillis() - start)/1000.0);
+        //System.out.println("creating scene " + (System.currentTimeMillis() - start)/1000.0);
 
 
         // create the scene.
@@ -294,6 +319,15 @@ public class WebBrowser extends Application {
         stage.setScene(scene);
         stage.show();
 
+        
+        stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            @Override public void handle(WindowEvent e) {                
+                core.publish(newBrowserState());
+            }
+        });
+
+        
+        
     }
 
     private void debug(final Scene scene) {
@@ -439,7 +473,9 @@ public class WebBrowser extends Application {
                 forwardButton.disableProperty().unbind();
                 forwardButton.disableProperty().bind(newBrowser.getHistory().canNavForwardProperty().not());
             }
-            Button backButton = (Button) mainLayout.lookup("#backButton");
+            Button backButton = (Button)mainLayout.lookup("#backButton");
+            
+             
             if (forwardButton != null) {
                 backButton.disableProperty().unbind();
                 backButton.disableProperty().bind(newBrowser.getHistory().canNavBackwardProperty().not());
@@ -473,10 +509,7 @@ public class WebBrowser extends Application {
     public TabManager getTabManager() {
         return tabManager;
     }
-
-    public static void main(String[] args) {
-        Application.launch(args);
-    }
+    
 
     
     /** URL router */
@@ -488,7 +521,8 @@ public class WebBrowser extends Application {
                 Node c;
                 if (r instanceof String) {
                     //html 
-                    c = new WebView();
+                    c = new WebView();                    
+                    ((WebView)c).setFontSmoothingType(FontSmoothingType.GRAY);
                     ((WebView)c).getEngine().loadContent((String)r);
                 }
                 else if (r instanceof Node) {
