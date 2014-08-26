@@ -283,7 +283,7 @@ public class Core extends EventEmitter {
     public synchronized void broadcast(NObject x, boolean block) {
         if (net!=null) {
             System.err.println("broadcasting " + x);
-            net.send("obj", x.toStringDetailed());
+            net.send("obj0", x.toStringDetailed());
 //            try {
 //                
 //                    

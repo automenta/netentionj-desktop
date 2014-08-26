@@ -41,7 +41,7 @@ public class RunMemoryPeer extends NetentionJFX {
     }
     
     protected static void addBot() {
-        Core b = new Core("BotB");
+        Core b = new Core();
         try {
             b.online(10010);
             Thread.sleep(2000);

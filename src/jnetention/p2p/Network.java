@@ -20,7 +20,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,6 +35,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -59,7 +59,8 @@ public class Network {
     private static final String HEARTBEAT_TOPIC = ":H:";
     private final static String ACK_TOPIC = ":A:";
     
-    public final Deque<DatagramPacket> incoming = new ArrayDeque();
+    public final Deque<DatagramPacket> incoming =  new ConcurrentLinkedDeque();
+    
     /** The initial collection of seeds passed when the service was created */
     private final Collection<InetSocketAddress> seeds;
     /** Lists all the known peers we have ever known; some of them may be dead */
@@ -326,14 +327,15 @@ public class Network {
         final String topic = reader.readLine();
         final String msg = readMessage(reader);
 
-        LOG.info("message received from " + remote + ", id=" + _id + ", peers=" + _peers + ", messageID=" + messageID
-                + ", sentTo=" + _sentTo + ", topic=" + topic + ", msg=" + msg);
 
         if (id.equals(_id)) {
             // We inadvertently sent the message to ourselves.
             resend(messageID);
             return;
         }
+        
+        System.err.println("message received from " + remote + ", id=" + _id + ", peers=" + _peers + ", messageID=" + messageID
+                + ", sentTo=" + _sentTo + ", topic=" + topic + ", msg=" + msg);
 
         processPeers(remote, _peers);
 
@@ -423,13 +425,13 @@ public class Network {
         });
 
         final Thread current = Thread.currentThread();
-        final byte buf[] = new byte[maxPacketSize];
+        //final byte buf[] = new byte[maxPacketSize];
 
         while (true) {
-            if (current.isInterrupted())
-                break;            
+            /*if (current.isInterrupted())
+                break;            */
 
-            incoming.add(receivePckg(buf));
+            incoming.add(receivePckg(new byte[maxPacketSize]));
             
             executor.execute(processNextPacket);
         }
@@ -586,7 +588,7 @@ public class Network {
     private void send(final InetSocketAddress target, final Message message) {
         message.addSentTo(target);
 
-        LOG.info("sending message " + message + " to " + target);
+        System.err.println("sending message " + message + " to " + target);
 
         final byte[] raw = serialize(message);
 
