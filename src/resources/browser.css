@@ -20,7 +20,6 @@
  */
 
 .root {
-    -fx-base: antiquewhite;
     -fx-light-text-color: derive(#292929, 20%);
 }
 .current-menu {
@@ -32,12 +31,12 @@
 }
 
 .sidebar-background {
-    -fx-background-color: linear-gradient(to bottom, derive(antiquewhite, -10%), derive(antiquewhite, 10%));
+    -fx-background-color: linear-gradient(to bottom, derive(white, -10%), derive(gray, 10%));
 }
 
 .status-background {
-    -fx-background-color: rgba(245, 222, 179, 0.65);
-    -fx-border-color: rgba(245, 222, 179, 0.85)
+    -fx-background-color: gray;
+    -fx-border-color: darkgray;
 }
 
 .icon-button {
@@ -49,11 +48,11 @@
 }
 
 .sidebar-scroll {
-    -fx-background-color: derive(antiquewhite, 10%);
+    -fx-background-color: derive(gray, 10%);
 }
 
 .toolbar {
-    -fx-background-color: linear-gradient(to bottom, derive(antiquewhite, -5%), derive(antiquewhite, 5%));
+    -fx-background-color: linear-gradient(to bottom, derive(gray, -5%), derive(gray, 5%));
     -fx-padding: 2 5 2 2;
 }
 
@@ -68,5 +67,5 @@
 
 .tab-pane > .tab-header-area > .tab-header-background {
     /* TODO should not be using text-box-border I think? */
-    -fx-background-color: linear-gradient(to bottom, derive(antiquewhite, -4%), derive(antiquewhite, 5%));
+    -fx-background-color: linear-gradient(to bottom, derive(gray, -4%), derive(gray, 5%));
 }

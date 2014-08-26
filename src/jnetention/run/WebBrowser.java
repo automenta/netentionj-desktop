@@ -68,8 +68,6 @@ import jnetention.Core;
 import jnetention.NObject;
 import jnetention.gui.IndexTreePane;
 import jnetention.gui.NodeControlPane;
-import nars.gui.NARControls;
-import nars.gui.output.MemoryView;
 import org.jewelsea.willow.browser.BrowserTab;
 import org.jewelsea.willow.browser.BrowserWindow;
 import org.jewelsea.willow.browser.LoadingProgressDisplay;
@@ -125,7 +123,7 @@ public class WebBrowser extends Application {
             "about:";
     
     public static final String STYLESHEET =
-            "/resources/browser.black.css";
+            "/resources/browser.css";
     
     public StringProperty homeLocationProperty = new SimpleStringProperty(DEFAULT_HOME_LOCATION);
     private static final double INITIAL_SCENE_HEIGHT = 600;
@@ -573,16 +571,18 @@ public class WebBrowser extends Application {
             }            
         });
         
+        /*
         router.add(new Route("about:logic/memory", "Logic Memory") {
             @Override public Object handle(Map<String, String> parameters) {
                 return new MemoryView(core.logic);
             }            
         });
-        router.add(new Route("about:logic", "Logic") {
+        */
+        /*router.add(new Route("about:logic", "Logic") {
             @Override public Object handle(Map<String, String> parameters) {
                 return new NARControls(core.logic);
             }            
-        });
+        });*/
     
     }
 

@@ -50,7 +50,6 @@ public class WikiTagger extends WikiBrowser {
                             n.setSubject(subject.id);
 
                             for (String t : tags) {
-                                core.knowProduct(subject.id, id, t, 1.0, 0.95, 0.9);
                                 n.add(t, id);
                             }
 

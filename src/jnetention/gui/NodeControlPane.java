@@ -8,6 +8,8 @@ package jnetention.gui;
 
 import de.jensd.fx.fontawesome.AwesomeDude;
 import de.jensd.fx.fontawesome.AwesomeIcon;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.embed.swing.SwingNode;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -25,12 +27,10 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
-import javax.swing.SwingUtilities;
 import jnetention.Core;
 import jnetention.NObject;
 import jnetention.gui.swing.SwingMap;
 import jnetention.run.WebBrowser;
-import nars.gui.NARControls;
 import org.jxmapviewer.viewer.GeoPosition;
 
 /**
@@ -92,9 +92,21 @@ public class NodeControlPane extends BorderPane {
     
     
     public Tab newWikiTab() {
-        Tab t = new Tab(/*"Wiki"*/);
+        final Tab t = new Tab(/*"Wiki"*/);
         AwesomeDude.setIcon(t, AwesomeIcon.TAGS);
-        t.setContent(new WikiTagger(core, "Self"));
+        
+        t.selectedProperty().addListener(new ChangeListener<Boolean>() {
+            boolean firstvisible = true;
+
+            @Override
+            public void changed(ObservableValue<? extends Boolean> ov, Boolean b, Boolean t1) {
+                if (firstvisible) {                
+                    t.setContent(new WikiTagger(core, "Self"));
+                    firstvisible = false;
+                }
+            }
+            
+        });
         
         return t;
     }    
@@ -103,18 +115,19 @@ public class NodeControlPane extends BorderPane {
         Tab t = new Tab(/*"Space"*/);
         AwesomeDude.setIcon(t, AwesomeIcon.MAP_MARKER);
         
+        
         SwingNode swingMap = new SwingNode();
-//        swingMap.visibleProperty().addListener(new ChangeListener<Boolean>() {
-//            boolean firstvisible = true;
-//            @Override
-//            public void changed(ObservableValue<? extends Boolean> o, Boolean a, Boolean b) {
-//                if (swingMap.isVisible() && firstvisible) {
+        t.selectedProperty().addListener(new ChangeListener<Boolean>() {
+            boolean firstvisible = true;
+            @Override
+            public void changed(ObservableValue<? extends Boolean> o, Boolean a, Boolean b) {
+                if (swingMap.isVisible() && firstvisible) {
                     swingMap.setContent(new SwingMap( new GeoPosition(40.00, -80.00)));
-//                    firstvisible = false;
-//                }
-//            }
-//        });
-        t.setContent(swingMap);
+                    t.setContent(swingMap);
+                    firstvisible = false;
+                }
+            }
+        });
         return t;
     }
     public Tab newTimeTab() {
@@ -135,7 +148,7 @@ public class NodeControlPane extends BorderPane {
         
         Accordion a =new Accordion();
         
-        a.getPanes().addAll(new TitledPane("Identity", newIdentityPanel()), new TitledPane("Network", newNetworkPanel()), new TitledPane("Logic", newLogicPanel()), new TitledPane("Database", newDatabasePanel()));
+        a.getPanes().addAll(new TitledPane("Identity", newIdentityPanel()), new TitledPane("Network", newNetworkPanel()), /*new TitledPane("Logic", newLogicPanel()),*/ new TitledPane("Database", newDatabasePanel()));
         
         for (TitledPane tp : a.getPanes())
             tp.setAnimated(false);
@@ -160,12 +173,12 @@ public class NodeControlPane extends BorderPane {
         Pane p = new Pane();
         
         TextArea ta = new TextArea();
-        if (core.net!=null) {
-            ta.setText(core.net.getClass().getSimpleName());
-        }
-        else {
-            ta.setText("Offline");
-        }
+//        if (core.net!=null) {
+//            ta.setText(core.net.getClass().getSimpleName());
+//        }
+//        else {
+//            ta.setText("Offline");
+//        }
         p.getChildren().add(ta);        
         
         return p;
@@ -176,11 +189,6 @@ public class NodeControlPane extends BorderPane {
         
         final SwingNode s = new SwingNode();
         
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override public void run() {
-                s.setContent(new NARControls(core.logic));
-            }            
-        });
 
         ScrollPane x = new ScrollPane(s);
         

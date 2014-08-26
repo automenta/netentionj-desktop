@@ -21,10 +21,7 @@
 
 package org.jewelsea.willow.browser;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -37,12 +34,8 @@ import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import jnetention.Core;
 import jnetention.run.WebBrowser;
-import org.apache.commons.math3.stat.Frequency;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 /**
  * Tab associated with a browser window.
@@ -158,68 +151,38 @@ public class BrowserTab extends UITab<WebView> {
         if (!(location.startsWith("http://") || location.startsWith("https://")))
             return;
         
-        String title = engine.getTitle();
-        String metaKeywords = title + "";
-        Document doc = engine.getDocument();
+//        String title = engine.getTitle();
+//        String metaKeywords = title + "";
+//        Document doc = engine.getDocument();
+//        
+//        Element e = doc.getDocumentElement();
+//        
+//        NodeList n = e.getElementsByTagName("head");
+//        
+//        if (n.getLength() > 0) {
+//            n.item(0).normalize();
+//            n = n.item(0).getChildNodes();
+//            
+//            for (int i = 0; i < n.getLength(); i++) {
+//                Node child = n.item(i);   
+//                String name = child.getNodeName();
+//                if (name.equalsIgnoreCase("meta"))  {
+//                    HashMap<String,String> m = new HashMap();
+//                    extractNodeFeatures(m, child);           
+//                    if (m.containsKey("name") && m.containsKey("content")) {
+//                        if (m.get("name").equalsIgnoreCase("description") 
+//                                || m.get("name").equalsIgnoreCase("keywords") )
+//                            metaKeywords += " " + m.get("content") ;
+//                        
+//                    }
+//                }
+//            }
+//        }
+//        
+//        Frequency f = Core.tokenBag(metaKeywords, 3, 16);
         
-        Element e = doc.getDocumentElement();
-        
-        NodeList n = e.getElementsByTagName("head");
-        
-        if (n.getLength() > 0) {
-            n.item(0).normalize();
-            n = n.item(0).getChildNodes();
-            
-            for (int i = 0; i < n.getLength(); i++) {
-                Node child = n.item(i);   
-                String name = child.getNodeName();
-                if (name.equalsIgnoreCase("meta"))  {
-                    HashMap<String,String> m = new HashMap();
-                    extractNodeFeatures(m, child);           
-                    if (m.containsKey("name") && m.containsKey("content")) {
-                        if (m.get("name").equalsIgnoreCase("description") 
-                                || m.get("name").equalsIgnoreCase("keywords") )
-                            metaKeywords += " " + m.get("content") ;
-                        
-                    }
-                }
-            }
-        }
-        
-        Frequency f = Core.tokenBag(metaKeywords, 3, 16);
         
         
-        
-        try {
-            URL u = new URL(location);
-            String host = u.getHost();
-            core.knowInherit(location, "_interest", 1.0, 0.99, 0.9);
-            core.knowProduct(location, host, "_hostname", 1.0, 0.99, 0.8);
-            
-            
-            int maxKeytokens = 32;
-            Iterator<Comparable<?>> vi = f.valuesIterator();
-            int i = 0;
-            while ((vi.hasNext() && (i < maxKeytokens))) {
-                String t = vi.next().toString();
-                double p = f.getPct(t);
-                p = 0.5 + (p/2.0);
-                core.knowProduct(location, t, "_keyword", 1.0, p, p);
-                i++;
-            }
-            
-            if (prevLocation!=null) {
-                //core.knowProduct(prevLocation, host, "NextBrowserVisit", 1.0, 0.9, 0.8);
-                String v = "$0.95$ <" + core.n(prevLocation) + " =\\> " + core.n(location) + ">. %1.00;1.00%";             
-                core.logic.addInput(v);
-                core.think();
-            }
-            
-            prevLocation = location;
-            
-            
-        } catch (MalformedURLException ex) {
-        }
         
     }
 

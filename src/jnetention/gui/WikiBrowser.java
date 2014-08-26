@@ -8,7 +8,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,10 +25,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import jnetention.Core;
-import jnetention.NObject;
-import jnetention.SpacePoint;
 import jnetention.NTag;
-import nars.io.TextInput;
+import jnetention.SpacePoint;
 import netscape.javascript.JSObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -85,16 +82,9 @@ abstract public class WikiBrowser extends BorderPane {
 
         setTop(newControls());
 
-        visibleProperty().addListener(new ChangeListener<Boolean>() {
-            boolean firstvisible = true;
-            @Override
-            public void changed(ObservableValue<? extends Boolean> o, Boolean a, Boolean b) {
-                if (isVisible() && firstvisible) {
-                    loadWikiPage(startURL);                    
-                    firstvisible = false;
-                }
-            }
-        });
+        
+        if (startURL!=null)
+            loadWikiPage(startURL);                    
 
     }
 
@@ -195,13 +185,7 @@ abstract public class WikiBrowser extends BorderPane {
                     }
                 }
             }
-            for (String p : links.elementSet()) {
-                double total = links.size();
-                double count = links.count(p);
-                double prop = count/total;
 
-                core.knowProduct(currentTag, p, "Wikilink", 1.0, prop, 0.4);
-            }
         }
         
 
@@ -376,8 +360,7 @@ abstract public class WikiBrowser extends BorderPane {
     public class WikiOntology {
 
         public WikiOntology() {            
-            core.logic.addInput(new TextInput("<<(*,$1,$2) --> WikiLink> ==> <$1 <-> $2>>. %0.99;0.80%"));
-            core.think();            
+        
         }
 
         

@@ -7,16 +7,24 @@
 package jnetention.gui;
 
 import com.google.common.base.Function;
-import static com.google.common.collect.Iterables.*;
+import static com.google.common.collect.Iterables.addAll;
+import static com.google.common.collect.Iterables.transform;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.scene.control.Hyperlink;
+import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Slider;
+import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.FlowPane;
+import javafx.util.Callback;
 import jnetention.Core;
 import jnetention.Core.NetworkUpdateEvent;
 import jnetention.Core.SaveEvent;
@@ -36,6 +44,7 @@ public class IndexTreePane extends BorderPane implements Observer {
     private final Core core;
     private final TreeItem root;
     private final TagReceiver tagger;
+    private final SubjectSelect subjectSelect;
 
     public IndexTreePane(Core core, TagReceiver tagger) {
         super();
@@ -46,6 +55,14 @@ public class IndexTreePane extends BorderPane implements Observer {
         root = new TreeItem();        
                 
         tv = new TreeView(root);
+        
+        tv.setCellFactory(new Callback<TreeView<NObject>,TreeCell<NObject>>(){
+            @Override
+            public TreeCell<NObject> call(TreeView<NObject> p) {
+                return new TextFieldTreeCellImpl();
+            }
+        });
+        
         tv.setShowRoot(false);
         tv.setEditable(false);
 
@@ -74,14 +91,30 @@ public class IndexTreePane extends BorderPane implements Observer {
             }
         });
     
-        addHandlers();
-        update();
+
+         
+        
+        
+        FlowPane menup = new FlowPane();
+        subjectSelect = new SubjectSelect(core.getUsers());
+        subjectSelect.getSelectionModel().selectedItemProperty().addListener(new ChangeListener() {
+            @Override public void changed(ObservableValue ov, Object t, Object t1) {
+                update();
+            }
+        });
+        
+        menup.getChildren().add(subjectSelect);
+        setTop(menup);
         
         
         ScrollPane sp = new ScrollPane(tv);
         sp.setFitToWidth(true);
         sp.setFitToHeight(true);        
         setCenter(sp);
+        
+        addHandlers();
+        update();
+        
     }
 
     protected void addHandlers() {
@@ -98,7 +131,8 @@ public class IndexTreePane extends BorderPane implements Observer {
     }             
     
     
-    protected void update() {        
+    protected void update() {
+                
         root.getChildren().clear();
         for (NObject t : core.getTagRoots()) {
             root.getChildren().add(newTagTree((NTag)t));
@@ -106,10 +140,12 @@ public class IndexTreePane extends BorderPane implements Observer {
     }
     
     protected TreeItem newTagTree(final NTag t) {
+        NObject subjectFilter = subjectSelect.getSelectionModel().getSelectedItem();
+
         TreeItem<NObject> i = new TreeItem(t);
                               
         //add instances of the tag        
-        addAll(i.getChildren(), transform(core.tagged(t.id), new Function<NObject,TreeItem<NObject>>() {
+        addAll(i.getChildren(), transform(core.tagged(t.id, subjectFilter!=null ? subjectFilter.author : null), new Function<NObject,TreeItem<NObject>>() {
             @Override public TreeItem apply(final NObject f) {
                 return newInstanceItem(f);
             }
@@ -128,4 +164,66 @@ public class IndexTreePane extends BorderPane implements Observer {
             tagger.onTagSelected(item.id);
         }        
     }
+    
+
+    private final class TextFieldTreeCellImpl extends TreeCell<NObject> {
+ 
+ 
+        public TextFieldTreeCellImpl() {
+            super();
+        }
+ 
+ 
+        @Override
+        public void updateItem(NObject item, boolean empty) {
+            super.updateItem(item, empty);
+
+            setItem(item);
+            
+            if (item!=null) {
+                setText(null);
+                
+                BorderPane g = new BorderPane();
+                                
+                Label tl = new Label(item.toString());
+                Hyperlink tb = new Hyperlink("[+]");                
+                g.setTop(new FlowPane(tl, tb));
+                
+                BorderPane content = new BorderPane();
+                
+                tb.setOnAction(new EventHandler<ActionEvent>() {
+                    @Override public void handle(ActionEvent t) {                        
+                        if (g.getBottom()==null) {
+
+                            Slider slider = new Slider();
+                            slider.setMin(0);
+                            slider.setMax(100);
+                            slider.setValue(40);
+                            slider.setShowTickLabels(true);
+                            slider.setShowTickMarks(true);
+                            slider.setMajorTickUnit(50);
+                            slider.setMinorTickCount(5);
+                            slider.setBlockIncrement(10);
+
+                            content.setCenter(slider);
+                            g.setBottom(content);
+                        }
+                        else {
+                            g.setBottom(null);
+                        }
+                    }
+                });
+                
+                setGraphic(g);
+            }
+            
+
+        }
+ 
+ 
+        private String getString() {
+            return getItem() == null ? "" : getItem().toString();
+        }
+    }
+     
 }

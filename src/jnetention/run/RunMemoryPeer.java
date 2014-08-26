@@ -6,11 +6,13 @@
 
 package jnetention.run;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
 import jnetention.Core;
+import jnetention.NObject;
 import jnetention.gui.NetentionJFX;
-import net.tomp2p.futures.FutureDiscover;
 
 /**
  *
@@ -21,35 +23,53 @@ public class RunMemoryPeer extends NetentionJFX {
     @Override
     protected Core newCore(Application.Parameters p) {
         Core c = new Core();
-        try {
-            try {
-                c.online();
-            }
-            catch (Exception e) {
-                c.online(10000 + (int)(Math.random()*2000));
-            }
-            
-            FutureDiscover fd = c.connect();
-            fd.awaitUninterruptibly();
-            //assert(fd.isSuccess());            
+        new Thread(new Runnable() {
 
-            /*while (true) {
-                    for (PeerAddress pa : c.net.peerBean().peerMap().all()) {
-                            System.out.println("PeerAddress: " + pa);
-                    }
-                    Thread.sleep(1500);
-            } */
+            @Override
+            public void run() {
+                try {
+                    c.online(10001);
+                }
+                catch (Exception e) {
+                    System.err.println(e);
+                    System.exit(1);
+                }
+            }
             
-        }
-        catch (Exception e) {
-            System.err.println(e);
-            System.exit(1);
-        }
+        }).start();
         return c;
     }
     
+    protected static void addBot() {
+        Core b = new Core("BotB");
+        try {
+            b.online(10010);
+            Thread.sleep(2000);
+            
+            b.connect("localhost",10001);
+            
+            
+            
+            do {
+                b.publish(new NObject(Math.random() + "x"));
+                Thread.sleep(1000);
+            }        
+            while (true);
+            
+        } catch (Exception ex) {
+            Logger.getLogger(RunMemoryPeer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
     public static void main(String[] args) {
+        new Thread(new Runnable() {
+            @Override public void run() {
+                addBot();
+            }            
+        }).start();
+
         launch();        
+        
     }    
 
 }

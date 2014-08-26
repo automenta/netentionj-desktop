@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import javafx.application.Platform;
 
 /**
  * Adapted from http://www.recursiverobot.com/post/86215392884/witness-a-simple-android-and-java-event-emitter
@@ -80,5 +81,17 @@ public class EventEmitter {
             }
         }
     }
-    
+ 
+    public void emitLater(final Class eventClass, final Object... params) {
+        if (hasOn(eventClass)) {
+            Platform.runLater(new Runnable() {
+
+                @Override
+                public void run() {
+                    emit(eventClass, params);
+                }
+                
+            });
+        }
+    }
 }
